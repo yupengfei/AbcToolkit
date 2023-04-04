@@ -7,7 +7,6 @@ using System.Linq;
 using UnityEngine.EventSystems;
 using UnityEngine.AI;
 
-
 namespace ABCToolkit {
     /// <summary>
     /// Component which contains the list of abilities setup for the entity. Will handle selecting targets and will activate abilities. 
@@ -1702,12 +1701,6 @@ namespace ABCToolkit {
             //Structure for working out any potency modifications (Add 80% of Originators Strength)
             [System.Serializable]
             public class BlockStatModifications {
-
-                /// <summary>
-                /// The integration type for stat functionality - if ABC is picked then normal functionality is used
-                /// else stats from another integration system i.e game creator is used
-                /// </summary>
-                public ABCIntegrationType statIntegrationType;
 
                 /// <summary>
                 /// The operator used in changing the potency (Increase, Decrease)
@@ -4497,7 +4490,7 @@ namespace ABCToolkit {
                                 float statModification = 0;
 
                                 if (statMod.modifyByPercentOrBaseValue == PercentOrBase.Percent)
-                                    statModification = statMod.modificationValue / 100 * Originator.GetStatValue(statMod.statName, statMod.statIntegrationType);
+                                    statModification = statMod.modificationValue / 100 * Originator.GetStatValue(statMod.statName);
                                 else
                                     statModification = statMod.modificationValue;
 
@@ -4510,13 +4503,13 @@ namespace ABCToolkit {
                                 switch (statMod.arithmeticOperator) {
                                     case ArithmeticIncrDecrOperators.Increase:
 
-                                        Originator.AdjustStatValue(statMod.statName, statModification, statMod.statIntegrationType, GCStatType.Stat);
+                                        Originator.AdjustStatValue(statMod.statName, statModification);
 
 
                                         break;
                                     case ArithmeticIncrDecrOperators.Decrease:
 
-                                        Originator.AdjustStatValue(statMod.statName, -statModification, statMod.statIntegrationType, GCStatType.Stat);
+                                        Originator.AdjustStatValue(statMod.statName, -statModification);
 
                                         break;
                                 }
@@ -4594,13 +4587,13 @@ namespace ABCToolkit {
                                 switch (statMod.arithmeticOperator) {
                                     case ArithmeticIncrDecrOperators.Increase:
 
-                                        Originator.AdjustStatValue(statMod.statName, -statMod.finalStatValueModification, statMod.statIntegrationType, GCStatType.Stat);
+                                        Originator.AdjustStatValue(statMod.statName, -statMod.finalStatValueModification);
 
 
                                         break;
                                     case ArithmeticIncrDecrOperators.Decrease:
 
-                                        Originator.AdjustStatValue(statMod.statName, statMod.finalStatValueModification, statMod.statIntegrationType, GCStatType.Stat);
+                                        Originator.AdjustStatValue(statMod.statName, statMod.finalStatValueModification);
 
                                         break;
                                 }
@@ -6669,561 +6662,6 @@ namespace ABCToolkit {
         }
 
         /// <summary>
-        ///  Class for handling AI Rules, determining when to automatically activate an ability and which entity to activate it on. Class is only used and managed by ABC Controller Component.
-        /// </summary>
-        [System.Serializable]
-        public class AIRule {
-
-            // ************ Settings *****************************
-
-            #region Settings for AI RUle
-
-            /// <summary>
-            /// Name of the AI Rule
-            /// </summary>
-            [Tooltip("Name of the Rule ")]
-            public string RuleName;
-
-            /// <summary>
-            /// Will track when the AI Rule was last activated 
-            /// </summary>
-            [Tooltip("Will track when the AI Rule was last activated")]
-            public float AIRuleLastActivationTime = 0f;
-
-            /// <summary>
-            /// Determines what action the AI will do if all conditions are met (Activate ability, activate ability group etc)
-            /// </summary>
-            public AIAction selectedAIAction = AIAction.ActivateAbility;
-
-            /// <summary>
-            /// The ID of the ability which will activate if the rule meets all the conditions. ID is used so ability names can be changed without breaking AI rules setup. 
-            /// </summary>
-            [Tooltip("ID of the ability which will activate")]
-            public int AIAbilityID = -1;
-
-            /// <summary>
-            ///  used for inspector, keeps track of what ability is currently chosen for the rule 
-            /// </summary>
-            public int AIAbilityListChoice = 0;
-
-            /// <summary>
-            /// list of IDs of ability groups which will activate if the rule meets all the conditions. ID is used so ability group name can be changed without breaking AI rules setup. 
-            /// </summary>
-            [Tooltip("List of ability group (IDs) that will activate")]
-            public List<int> AIActivateAbilityGroupIDs = new List<int>();
-
-            /// <summary>
-            /// Used by inspector to select dropdowns
-            /// </summary>
-            public int AIActivateGroupListChoice = 0;
-
-            /// <summary>
-            /// The ID of the weapon to equip if the rule meets all the conditions
-            /// </summary>
-            [Tooltip("The ID of the weapon to equip if the rule meets all the conditions")]
-            public int AIWeaponID = -1;
-
-            /// <summary>
-            /// Used by inspector to select dropdowns
-            /// </summary>
-            public int AIWeaponListChoice = 0;
-
-            /// <summary>
-            /// The minimum duration of AI Blocking
-            /// </summary>
-            [Tooltip("The minimum duration of AI Blocking")]
-            [Range(0f, 100f)]
-            public float AIBlockDurationMin = 10f;
-
-            /// <summary>
-            /// The maximum duration of AI Blocking
-            /// </summary>
-            [Tooltip("The maximum duration of AI Blocking")]
-            [Range(0f, 100f)]
-            public float AIBlockDurationMax = 20f;
-
-            /// <summary>
-            /// If true then the AI rule will trigger a cooldown after use between a random min and max value. Whilst on cooldown the rule can't be used.
-            /// </summary>
-            [Tooltip("If true then the AI rule will enforce it's own cooldown after use between a random min and max value")]
-            public bool AIEnableRuleCooldown = false;
-
-            /// <summary>
-            /// The minimum cooldown which will be triggered after the rule is used
-            /// </summary>
-            [Tooltip("The minimum cooldown which will be triggered after the rule is used")]
-            [Range(0f, 600f)]
-            public float AIRuleCooldownMinValue = 30f;
-
-            /// <summary>
-            /// The maximum cooldown which will be triggered after the rule is used
-            /// </summary>
-            [Tooltip("The maximum cooldown which will be triggered after the rule is used")]
-            [Range(0f, 600f)]
-            public float AIRuleCooldownMaxValue = 90f;
-
-            /// <summary>
-            /// Will track the current cooldown of the AI Rule
-            /// </summary>
-            [Tooltip("The maximum cooldown which will be triggered after the rule is used")]
-            public float AIRuleCurrentCooldown = 0f;
-
-            /// <summary>
-            /// Minimum probability of the ability activating. If the dice roll is higher then the minimum and lower then the maximum then it will activate if other conditions are met. 
-            /// </summary>
-            [Range(0f, 100f)]
-            public float probabilityMinValue = 0f;
-
-            /// <summary>
-            /// Maximum probability of the ability activating. If the dice roll is higher then the minimum and lower then the maximum then it will activate if other conditions are met. 
-            /// </summary>
-            [Range(0f, 100f)]
-            public float probabilityMaxValue = 100f;
-
-
-            /// <summary>
-            /// Target Object to check conditions against
-            /// </summary>
-            public List<GameObject> AITargets;
-
-            /// <summary>
-            /// Tags to check conditions against
-            /// </summary>
-            public List<string> AITags;
-
-            /// <summary>
-            /// If condition is met which target should the ability be activated on: Original, Self, Nearest, Target of Nearest
-            /// </summary>
-            [Tooltip("If condition is met what target should the ability be used on?")]
-            public AIRuleTarget AIAbilityTarget;
-
-            /// <summary>
-            /// List of targets used to determine the target of the target 
-            /// </summary>
-            public List<GameObject> AINearestTargets;
-
-            /// <summary>
-            /// List of tags used to determine the target of the tag provided
-            /// </summary>
-            public List<string> AINearestTags;
-
-            /// <summary>
-            /// If true then ability will always activate ignoring all conditions setup
-            /// </summary>
-            [Tooltip("If true then ability will always activate ignoring all conditions setup")]
-            public bool castWithoutConditions = false;
-
-
-            /// <summary>
-            /// If true then ability will activate without checking for nearby potential targets (Dice Roll is still performed)
-            /// </summary>
-            [Tooltip("If true then ability will activate without checking for nearby potential targets (Dice Roll is still performed)")]
-            public bool activateWithoutTarget = false;
-
-            /// <summary>
-            /// If true then the ability will activate even if there is no open targeting slots due to the targeter limit already being reached
-            /// </summary>
-            [Tooltip("If true then the ability will activate even if there is no open targeting slots on the entity due to the targeter limit already being reached")]
-            public bool bypassTargetLimitations = false;
-
-
-            /// <summary>
-            /// Min range in which objects are checked against conditions setup for ability to activate i.e if object in x distance has health below 50% then activate
-            /// </summary>
-            [Tooltip("range to check conditions against objects")]
-            public float AIRangeMin = 0f;
-
-            /// <summary>
-            /// Max range in which objects are checked against conditions setup for ability to activate i.e if object in x distance has health below 50% then activate
-            /// </summary>
-            [Tooltip("range to check conditions against objects")]
-            public float AIRangeMax = 30f;
-
-
-            /// <summary>
-            /// If condition is met should the target be changed before using the ability 
-            /// </summary>
-            [Tooltip("If conditions are met should the active target change?")]
-            public bool updateTarget = false;
-
-            /// <summary>
-            /// If true then conditions are not checked against the entity activating the ability 
-            /// </summary>
-            [Tooltip("Does the entity Ignore caster in these conditions")]
-            public bool ignoreCaster = true;
-
-            /// <summary>
-            /// If the entity we check against currently has the effect active then this condition has been met
-            /// </summary>
-            public List<string> stateEffectConditions;
-
-            /// <summary>
-            /// If the entity we check against currently does not have the effect active then this condition has been met
-            /// </summary>
-            public List<string> stateEffectAbsentConditions;
-
-            /// <summary>
-            /// booling to determine to check targets HP as a condition 
-            /// </summary>
-            public bool AIHP = false;
-
-            /// <summary>
-            /// If health is greater then the value provided the condition has been met
-            /// </summary>
-            [Range(0f, 100f)]
-            public float AIHealthGreaterThan = 0;
-
-            /// <summary>
-            /// If health is less then the value provided the condition has been met
-            /// </summary>
-            [Range(0f, 100f)]
-            public float AIHealthLessThan = 100;
-
-            /// <summary>
-            /// booling to determine to check targets MP as a condition 
-            /// </summary>
-            public bool AIMP = false;
-
-            /// <summary>
-            /// If mana is greater then the value provided the condition has been met
-            /// </summary>
-            [Range(0f, 100f)]
-            public float AIManaGreaterThan = 0;
-
-            /// <summary>
-            /// If mana is less then the value provided the condition has been met
-            /// </summary>
-            [Range(0f, 100f)]
-            public float AIManaLessThan = 100;
-
-            /// <summary>
-            /// booling which when enabled will only activate depending on how many surrounding tags in the area are also currently activating
-            /// </summary>
-            public bool AIAreaActivationLimit = false;
-
-            /// <summary>
-            /// How far in the surrounding area to count tags activating 
-            /// </summary>
-            public float AIAreaActivationLimitRange = 20f;
-
-            /// <summary>
-            /// The max amount of surrounding objects that can be activating for the condition to continue
-            /// </summary>
-            public int AIAreaActivationLimitMax = 2;
-
-            /// <summary>
-            /// Tags to check conditions against
-            /// </summary>
-            public List<string> AIAreaActivationLimitTags;
-
-            /// <summary>
-            /// If true then the entity has to face the target for the condition to continue and activate the ability
-            /// </summary>
-            public bool AIFacingTarget = false;
-
-
-            /// <summary>
-            /// Bool to determine if the rule is enabled or not
-            /// </summary>
-            [Tooltip("Is the rule enabled ")]
-            public bool AIActive = true;
-
-            #endregion
-
-            // ************ ENUMS *****************************
-
-            #region ENUMS
-
-            public enum AIAction {
-                ActivateAbility,
-                ActivateAbilityGroup,
-                ActivateBlocking,
-                EquipWeapon
-            }
-            #endregion
-
-            #region Private Methods
-
-            // ************************** Private Methods *************************************
-
-            /// <summary>
-            /// Will return an integer indicating how many entities are currently activating abilities within a range of the position provided
-            /// </summary>
-            /// <param name="SurroundingPosition">Position from which the area is checked</param>
-            /// <param name="Range">The range of the area checked</param>
-            /// <param name="Originator">entity which is activating the ability</param>
-            /// <returns>Integer indicating how many entities are activating</returns>
-            private int NumberOfSurroundingTagsActivating(Vector3 SurroundingPosition, float Range, ABC_IEntity Originator) {
-
-                // get all targets in the  range specified
-                List<ABC_IEntity> surroundingTags = ABC_Utilities.GetAllABCEntitiesInRange(SurroundingPosition, Range).ToList();
-
-                //Counts how many objects are activating in the area
-                int retVal = 0;
-
-                // loop through all objects found which are enabled and have the tags specificed
-                foreach (ABC_IEntity Obj in surroundingTags.Where(a => a.gameObject.activeInHierarchy == true && ABC_Utilities.ObjectHasTag(a.gameObject, ABC_Utilities.ConvertTags(Originator, this.AIAreaActivationLimitTags)))) {
-
-
-                    //If the object is activating an ability then increase the count
-                    if (Obj.HasABCController() && Obj.activatingAbility == true)
-                        retVal++;
-
-                }
-
-                //Return the count
-                return retVal;
-            }
-
-
-            /// <summary>
-            /// Returns a bool indication if the entity is facing the target 
-            /// </summary>
-            /// <param name="Target">object to check if originator is facing</param>
-            /// <param name="Originator">entity which is activating the ability</param>
-            /// <returns>True if originator is facing target, else false</returns>
-            private bool FacingTargetCheck(GameObject Target, ABC_IEntity Originator) {
-
-                var dir = (Target.transform.position - Originator.transform.position).normalized;
-                var dot = Vector3.Dot(dir, Originator.transform.forward);
-
-                if (dot >= 0.3) {
-                    //  were facing the target! Note: higher the value the more accuracy needed to face
-                    return true;
-                } else {
-                    return false;
-
-                }
-            }
-
-            /// <summary>
-            /// A dice roll is performed and checked against the probability min and max values. If the roll value is inbetween the values true is returned, else false
-            /// </summary>
-            /// <returns>True if dice roll is inbetween the probability min and max, else false</returns>
-            private bool DiceRollValid() {
-                // roll the dice for probability settings on each rule
-                float dice = Random.Range(0f, 100f);
-
-                // if the dice roll is not inbetween the min and max value then return false 
-                if (dice < this.probabilityMinValue || dice > this.probabilityMaxValue)
-                    return false;
-
-                //Else dice roll is inbetween min and max so return true
-                return true;
-
-            }
-
-            #endregion
-
-            #region Public Methods
-
-            // ************************** Public Methods *************************************
-
-            /// <summary>
-            /// Constructor mainly used by inspector
-            /// </summary>
-            public AIRule() {
-            }
-
-
-
-
-
-            /// <summary>
-            /// Returns a bool indicating if the target provided meets the conditions set for the Rule to activate. Example: If target health is > 50% and is effected by poison
-            /// </summary>
-            /// <param name="Target">object to check if conditions are met</param>
-            /// <param name="Originator">entity which is activating the rule</param>
-            /// <returns>True if correct AI target conditions are met, else false</returns>
-            public bool CorrectTargetConditions(GameObject Target, ABC_IEntity Originator) {
-
-                // Retrieve/Create entity object  for target as we are about to check health and mana 
-                ABC_IEntity targetEntity = ABC_Utilities.GetStaticABCEntity(Target);
-
-                //retrieve target distance to check against AI range min and max
-                float targetDistance = Vector3.Distance(targetEntity.transform.position, Originator.transform.position);
-
-                // if we collided with ourself and ignoring caster then do nothing |or| if the collided object is not within the range  |or| gameobject is not active anymore then continue to next object
-                if (this.ignoreCaster == true && Target.gameObject == Originator.gameObject || targetDistance < this.AIRangeMin || targetDistance > this.AIRangeMax || Target.gameObject.activeInHierarchy == false)
-                    return false;
-
-                // if the dice roll is not inbetween the min and max value then return false 
-                if (this.DiceRollValid() == false)
-                    return false;
-
-                // if we are casting without conditions then we can return true here
-                if (this.castWithoutConditions == true)
-                    return true;
-
-                // else we check against conditions
-
-                // If no state manager script then return false
-                if (targetEntity.HasABCStateManager() == false)
-                    return false;
-
-
-
-                // If we are checking for a certain tag or target and the object we are checking conditions against isn't the target or hasn't got the right tag then return false
-                if ((this.AITags.Count > 0 && ABC_Utilities.ObjectHasTag(Target.gameObject, ABC_Utilities.ConvertTags(Originator, this.AITags)) == false) || (this.AITargets.Count > 0 && this.AITargets.Contains(Target.gameObject) == false))
-                    return false;
-
-                //If facing target condition is true and the entity is not facing the object we are checking conditions against then return false
-                if (this.AIFacingTarget == true && this.FacingTargetCheck(Target, Originator) == false)
-                    return false;
-
-
-                // if were checking against HP and we don't meet condition then turn return false
-                if (this.AIHP == true && ((targetEntity.healthValue / targetEntity.maxHealthValue) * 100 >= this.AIHealthGreaterThan && (targetEntity.healthValue / targetEntity.maxHealthValue) * 100 <= this.AIHealthLessThan) == false)
-                    return false;
-
-
-                //// if were checking against MP and were not meeting the criteria then return false
-                try {
-                    if (this.AIMP == true && ((targetEntity.manaValue / targetEntity.maxManaValue) * 100 >= this.AIManaGreaterThan && (targetEntity.manaValue / targetEntity.maxManaValue) * 100 <= this.AIManaLessThan) == false)
-                        return false;
-                } catch {
-                    // On the off chance that the originator mana value has not been setup right we have added a try catch 
-                    Originator.AddToDiagnosticLog("Could not test condition for AIRule: " + this.RuleName + " from " + Originator.gameObject.name + " Due to " + Target.name + "not having mana setup correctly. Rule condition failed.");
-                    return false;
-                }
-
-
-                // checking for active state effects - If not active then we can return false 
-                if (this.stateEffectConditions.Count > 0 && targetEntity.IsEffectActive(stateEffectConditions) == false)
-                    return false;
-
-
-
-                // checking for absent state effects - If the effect is active we can return false
-                if (this.stateEffectAbsentConditions.Count > 0 && targetEntity.IsEffectActive(stateEffectAbsentConditions))
-                    return false;
-
-
-                // Check how many any entities surrounding the target are activating abilities. If more then the limit setup then return false
-                if (this.AIAreaActivationLimit == true && this.NumberOfSurroundingTagsActivating(targetEntity.transform.position, this.AIAreaActivationLimitRange, Originator) > this.AIAreaActivationLimitMax)
-                    return false;
-
-
-                // If we have reached this far then all conditions have been met and we can return true 
-                return true;
-
-            }
-
-
-            /// <summary>
-            /// Returns a bool indicating if the rule requires a potential target to activate, if true then no target conditions need to be checked. 
-            /// </summary>
-            /// <returns>True if rule can activate ability without potential target/conditions, else false</returns>
-            public bool CanActivateWithoutTarget() {
-
-                if (this.castWithoutConditions == false || this.castWithoutConditions == true && this.activateWithoutTarget == false)
-                    return false;
-
-
-                if (this.DiceRollValid() == false)
-                    return false;
-
-
-
-                // If we have reached this far then all conditions have been met and we can return true 
-                return true;
-
-            }
-
-
-
-            /// <summary>
-            /// Returns a GameObject which should be the final target for the ability. This is finalised incase the AI has been setup to activate on another target if conditions are met on the original target 
-            /// Exampel: Fire on a nearby Enemy tag if my health is above 50%
-            /// </summary>
-            /// <param name="CurrentTarget">Original target for the activating ability </param>
-            /// <param name="Originator">entity which is activating the ability</param>
-            /// <param name="PotentialTargets">List of potential new targets to activate the ability on</param>
-            /// <returns></returns>
-            public GameObject FinaliseTarget(GameObject CurrentTarget, ABC_IEntity Originator, List<ABC_IEntity> PotentialTargets) {
-
-                if (this.updateTarget == false)
-                    return CurrentTarget;
-
-
-                switch (this.AIAbilityTarget) {
-                    case AIRuleTarget.Original:
-                        // return original target
-                        return CurrentTarget;
-
-                    case AIRuleTarget.Self:
-                        // return the originator
-                        return Originator.gameObject;
-
-                    case AIRuleTarget.Nearest:
-
-                        //  using the potential targets list passed above
-                        foreach (ABC_IEntity AITarget in PotentialTargets) {
-
-                            ABC_IEntity iEntity = ABC_Utilities.GetStaticABCEntity(AITarget.gameObject);
-
-                            // check through list to see if any object has the right tag or target 
-                            if (iEntity.HasABCStateManager() == true && this.AINearestTags.Count > 0 & ABC_Utilities.ObjectHasTag(AITarget.gameObject, ABC_Utilities.ConvertTags(Originator, this.AINearestTags)) || this.AINearestTargets.Count > 0 && this.AINearestTargets.Contains(AITarget.gameObject))
-                                return AITarget.gameObject;
-                        }
-
-                        // correct target not found so return empty object
-                        return null;
-                    case AIRuleTarget.TargetOfNearest:
-                        // continue using the list collected above
-                        foreach (ABC_IEntity AITarget in PotentialTargets) {
-
-                            ABC_IEntity iEntity = ABC_Utilities.GetStaticABCEntity(AITarget.gameObject);
-
-                            // check through list to see if any object has the right tag or target 
-                            if (iEntity.HasABCStateManager() == true && this.AINearestTags.Count > 0 & ABC_Utilities.ObjectHasTag(AITarget.gameObject, ABC_Utilities.ConvertTags(Originator, this.AINearestTags)) || this.AINearestTargets.Count > 0 && this.AINearestTargets.Contains(AITarget.gameObject)) {
-
-                                // get target of the potential target 
-                                GameObject retVal = ABC_Utilities.GetStaticABCEntity(AITarget.gameObject).target;
-
-                                if (retVal != null)
-                                    return retVal;
-
-                            }
-
-
-                        }
-
-                        // correct target not found so return empty object
-                        return null;
-
-                    default:
-                        return null;
-                }// end of switch
-
-            }
-
-
-            /// <summary>
-            /// will trigger a rule cooldown between a random min and max value. Whilst on cooldown the rule can't be used.
-            /// </summary>
-            public void ActivateRuleCoolDown() {
-
-                //If cooldown not enabled then end here and don't trigger the cooldown
-                if (this.AIEnableRuleCooldown == false)
-                    return;
-
-
-                //Set cooldown to a random value between min and max 
-                //If AI rule not activated before then make the minimum value 0
-                this.AIRuleCurrentCooldown = Random.Range(this.AIRuleLastActivationTime == 0 ? 0 : this.AIRuleCooldownMinValue, this.AIRuleCooldownMaxValue);
-
-                //Record the time the rule last activated for the cooldown tracking
-                this.AIRuleLastActivationTime = Time.time;
-
-            }
-
-            #endregion
-
-        }
-
-
-        /// <summary>
         ///  Class for handling Mana GUI interfaces like sliders and text. Class is only used and managed by ABC Controller Component.
         /// </summary>
         [System.Serializable]
@@ -7526,11 +6964,6 @@ namespace ABCToolkit {
         }
 
         /// <summary>
-        /// List of rules setup for this entity
-        /// </summary>
-        public List<AIRule> AIRules = new List<AIRule>();
-
-        /// <summary>
         /// List of Mana GUI setup for this entity 
         /// </summary>
         public List<ManaGUI> ManaGUIList = new List<ManaGUI>();
@@ -7616,12 +7049,6 @@ namespace ABCToolkit {
         /// What Weapon is currently showing in the inspector
         /// </summary>
         public int CurrentWeaponIndex = 0;
-
-        /// <summary>
-        /// what AI Rule is currently showing in the inspector 
-        /// </summary>
-        public int CurrentAI = 0;
-
 
         /// <summary>
         /// What Ability is currently showing in the inspector
@@ -8494,21 +7921,10 @@ namespace ABCToolkit {
         /// </summary>
         public float currentMaxMana {
             get {
-
-                if (this.manaIntergrationType == ABCIntegrationType.GameCreator)
-                    return meEntity.GetGCMaxAttributeValue(this.gcManaID);
-                else if (this.manaIntergrationType == ABCIntegrationType.GameCreator2)
-                    return meEntity.GetGC2MaxAttributeValue(this.gcManaID);
-                else
-                    return this.maxMana;
+                return this.maxMana;
             }
             set {
-                if (this.manaIntergrationType == ABCIntegrationType.GameCreator)
-                    meEntity.SetGCStatValue(this.gcManaID, value, GCStatType.Attribute);
-                else if (this.manaIntergrationType == ABCIntegrationType.GameCreator2)
-                    meEntity.SetGC2StatValue(this.gcManaID, value, GCStatType.Attribute);
-                else
-                    this.maxMana = value;
+                this.maxMana = value;
             }
         }
 
@@ -8523,31 +7939,14 @@ namespace ABCToolkit {
         /// </summary>
         public float currentMana {
             get {
-
-                if (this.manaIntergrationType == ABCIntegrationType.GameCreator)
-                    return meEntity.GetGCStatValue(this.gcManaID, GCStatType.Attribute);
-                else if (this.manaIntergrationType == ABCIntegrationType.GameCreator2)
-                    return meEntity.GetGC2StatValue(this.gcManaID, GCStatType.Attribute);
-                else
-                    return this.manaABC;
+                return this.manaABC;
             }
             set {
-                if (this.manaIntergrationType == ABCIntegrationType.GameCreator)
-                    meEntity.SetGCStatValue(this.gcManaID, value, GCStatType.Attribute);
-                else if (this.manaIntergrationType == ABCIntegrationType.GameCreator2)
-                    meEntity.SetGC2StatValue(this.gcManaID, value, GCStatType.Attribute);
-                else
-                    this.manaABC = value;
+                this.manaABC = value;
 
             }
         }
 
-
-        /// <summary>
-        /// The integration type for mana functionality - if ABC is picked then normal functionality is used
-        /// else mana from another integration system i.e game creator is used
-        /// </summary>
-        public ABCIntegrationType manaIntergrationType = ABCIntegrationType.ABC;
 
         /// <summary>
         /// Game Creator Integration: The ID of the GC stat/attribute which represents mana 
@@ -8717,23 +8116,11 @@ namespace ABCToolkit {
         /// </summary>
         public float currentMaxBlockDurability {
             get {
-
-                if (this.blockDurabilityIntergrationType == ABCIntegrationType.GameCreator)
-                    return meEntity.GetGCMaxAttributeValue(this.gcBlockDurabilityID);
-                else if (this.blockDurabilityIntergrationType == ABCIntegrationType.GameCreator2)
-                    return meEntity.GetGC2MaxAttributeValue(this.gcBlockDurabilityID);
-                else
-                    return this.maxBlockDurability;
+                return this.maxBlockDurability;
 
             }
             set {
-
-                if (this.blockDurabilityIntergrationType == ABCIntegrationType.GameCreator)
-                    meEntity.SetGCStatValue(this.gcBlockDurabilityID, value, GCStatType.Attribute);
-                else if (this.blockDurabilityIntergrationType == ABCIntegrationType.GameCreator2)
-                    meEntity.SetGC2StatValue(this.gcBlockDurabilityID, value, GCStatType.Attribute);
-                else
-                    this.maxBlockDurability = value;
+                this.maxBlockDurability = value;
 
             }
         }
@@ -8749,31 +8136,14 @@ namespace ABCToolkit {
         /// </summary>
         public float currentBlockDurability {
             get {
-
-                if (this.blockDurabilityIntergrationType == ABCIntegrationType.GameCreator)
-                    return meEntity.GetGCStatValue(this.gcBlockDurabilityID, GCStatType.Attribute);
-                else if (this.blockDurabilityIntergrationType == ABCIntegrationType.GameCreator2)
-                    return meEntity.GetGC2StatValue(this.gcBlockDurabilityID, GCStatType.Attribute);
-                else
-                    return this.blockDurabilityABC;
+                return this.blockDurabilityABC;
 
             }
             set {
-                if (this.blockDurabilityIntergrationType == ABCIntegrationType.GameCreator)
-                    meEntity.SetGCStatValue(this.gcBlockDurabilityID, value, GCStatType.Attribute);
-                else if (this.blockDurabilityIntergrationType == ABCIntegrationType.GameCreator2)
-                    meEntity.SetGC2StatValue(this.gcBlockDurabilityID, value, GCStatType.Attribute);
-                else
-                    this.blockDurabilityABC = value;
+                this.blockDurabilityABC = value;
             }
         }
 
-
-        /// <summary>
-        /// The integration type for block durability functionality - if ABC is picked then normal functionality is used
-        /// else block durability from another integration system i.e game creator is used
-        /// </summary>
-        public ABCIntegrationType blockDurabilityIntergrationType = ABCIntegrationType.ABC;
 
         /// <summary>
         /// Game Creator Integration: The ID of the GC stat/attribute which represents block durability 
@@ -10184,14 +9554,7 @@ namespace ABCToolkit {
 
 
         private enum ControllerAnimationState {
-            CrossHairOverride,
-            AINavWander,
-            AINavMoveToDestination,
-            AINavRotateAroundLeft,
-            AINavRotateAroundRight,
-            AINavMoveBack,
-            AINavMoveForward,
-            AINavFalling
+            CrossHairOverride
         }
 
 
@@ -10619,62 +9982,6 @@ namespace ABCToolkit {
         }
 
         /// <summary>
-        /// Will enable or disable the AI for the entity
-        /// </summary>
-        /// <param name="Enabled">True if to enable AI, else false</param>
-        public void ToggleAI(bool Enabled = true) {
-
-            //Toggle the AI
-            this.enableAI = Enabled;
-
-        }
-
-
-        /// <summary>
-        /// Will enable or disable the AI Navigation block for the entity, if blocked then the navigation will not run
-        /// </summary>
-        /// <param name="Enabled">True if to block AI Navigation, else false</param>
-        public void BlockAINavigation(bool Enabled = true) {
-
-            //Toggle the AI
-            this.blockNavAI = Enabled;
-
-        }
-
-        /// <summary>
-        /// Will immediately stop any destination behaviours currently in progress
-        /// </summary>
-        public void AINavigationStopDestinationBehaviours() {
-
-            //Stop moving away
-            if (this.navAIChangeDestinationMovingAway) {
-                this.navAIChangeDestinationMovingAway = false;
-                this.EndAnimation(ControllerAnimationState.AINavMoveBack, this.Ani);
-                this.EndAnimationRunner(ControllerAnimationState.AINavMoveBack, meEntity.animationRunner);
-            }
-
-            //Stop moving towards
-            if (this.navAIChangeDestinationMovingTowards) {
-                this.navAIChangeDestinationMovingTowards = false;
-                this.navAIChangeDestinationMoveTowardsStartingDistance = 0f;
-                this.EndAnimation(ControllerAnimationState.AINavMoveForward, this.Ani);
-                this.EndAnimationRunner(ControllerAnimationState.AINavMoveForward, meEntity.animationRunner);
-            }
-
-            //Stop rotating around
-            if (this.navAIRotateAroundDestination) {
-                this.navAIRotateAroundDestination = false;
-                this.navAIRotateAroundDirection = 0;
-                this.EndAnimation(ControllerAnimationState.AINavRotateAroundRight, this.Ani);
-                this.EndAnimationRunner(ControllerAnimationState.AINavRotateAroundRight, meEntity.animationRunner);
-                this.EndAnimation(ControllerAnimationState.AINavRotateAroundLeft, this.Ani);
-                this.EndAnimationRunner(ControllerAnimationState.AINavRotateAroundLeft, meEntity.animationRunner);
-            }
-
-        }
-
-
-        /// <summary>
         /// Will add a new UI Icon to the entity
         /// </summary>
         /// <param name="Icon">Icon object to add</param>
@@ -10841,64 +10148,7 @@ namespace ABCToolkit {
 
         }
 
-        /// <summary>
-        /// Will make the entity aware that an AI navigation target is around, used when being hit when looking in other direction etc
-        /// If the entity doesn't have a current AI navigation target then this function will 
-        /// turn the entity to face the AI navigation target that it's now aware of for the AI handler to do the rest of logic
-        /// </summary>
-        /// <param name="EntityToBeAwareOf">Object that this entity should be aware of</param>
-        public void AINavigationAlert(ABC_IEntity EntityToBeAwareOf) {
 
-            //If AI navigation not enabled, entity is activating an ability or doesn't have a AI tag we care about then end here
-            if (this.currentNavAIDestination != null || this.navAIEnabled == false || this.blockNavAI == true || this.blockNavAI == true || this.IsActivatingAbility() == true || ABC_Utilities.ObjectHasTag(EntityToBeAwareOf.gameObject, ABC_Utilities.ConvertTags(this.meEntity, this.destinationTags)) == false)
-                return;
-
-            //Are we already facing target?
-            var dir = (EntityToBeAwareOf.transform.position - meEntity.transform.position).normalized;
-            var dot = Vector3.Dot(dir, meEntity.transform.forward);
-
-            if (dot >= 0.3)
-                return;    //  were facing the target so already alerted so can end here
-
-
-            //If this far then we are not facing the alerted entity so will turn to face it, the AI handler will pick up the rest
-            meEntity.TurnTo(EntityToBeAwareOf.gameObject);
-
-
-        }
-
-        /// <summary>
-        /// Will clear the current destination stopping the navagent from moving towards anywhere 
-        /// </summary>
-        public void ClearAINavigationDestination() {
-
-            if (this.navAIEnabled == false)
-                return;
-
-            if (this.meNavAgent != null && meNavAgent.isOnNavMesh) {
-                this.meNavAgent.isStopped = true;
-                this.meNavAgent.ResetPath();
-            }
-
-            this.currentNavAIDestination = null;
-            this.navAIDestinationSet = false;
-            this.navAIWanderSet = false;
-
-            //End all navigation animations
-            this.EndAnimation(ControllerAnimationState.AINavMoveToDestination, this.Ani);
-            this.EndAnimationRunner(ControllerAnimationState.AINavMoveToDestination, meEntity.animationRunner);
-            this.EndAnimation(ControllerAnimationState.AINavWander, this.Ani);
-            this.EndAnimationRunner(ControllerAnimationState.AINavWander, meEntity.animationRunner);
-            this.EndAnimation(ControllerAnimationState.AINavRotateAroundLeft, this.Ani);
-            this.EndAnimationRunner(ControllerAnimationState.AINavRotateAroundLeft, meEntity.animationRunner);
-            this.EndAnimation(ControllerAnimationState.AINavRotateAroundRight, this.Ani);
-            this.EndAnimationRunner(ControllerAnimationState.AINavRotateAroundRight, meEntity.animationRunner);
-            this.EndAnimation(ControllerAnimationState.AINavMoveBack, this.Ani);
-            this.EndAnimationRunner(ControllerAnimationState.AINavMoveBack, meEntity.animationRunner);
-            this.EndAnimation(ControllerAnimationState.AINavMoveForward, this.Ani);
-            this.EndAnimationRunner(ControllerAnimationState.AINavMoveForward, meEntity.animationRunner);
-
-        }
 
         /// <summary>
         /// Will adjust nav agent speed
@@ -13974,9 +13224,6 @@ namespace ABCToolkit {
             if (this.allowAbilitiesToRandomlySwapPositions == true)
                 InvokeRepeating("RandomlySwapAbilityPositions", 1f, this.abilityRandomPositionSwapInterval);
 
-            //Make sure AI Nav isn't blocked 
-            this.BlockAINavigation(false);
-
             //If minimum intermission value is 0 then change to 0.2 so it will still run
             if (this.minimumAICheckIntermission == 0)
                 this.minimumAICheckIntermission = 0.2f;
@@ -14688,219 +13935,6 @@ namespace ABCToolkit {
 
 
         /// <summary>
-        /// Main function which handles AI for activating abilities. The method will cycle through all AI rules activating abilities that meet the conditions set. 
-        /// </summary>
-        private void AutoCastHandler() {
-
-            //If the intermission hasn't been calculated yet then record a random between the minimum and maximum range
-            if (this.AICheckIntermission == 0f)
-                this.AICheckIntermission = Random.Range(this.minimumAICheckIntermission, this.maximumAICheckIntermission);
-
-
-            //If the time since the last AI Action is less then the intermission then return here as we need to wait longer        
-            if (Time.time - this.timeOfLastAIAction < this.AICheckIntermission)
-                return;
-
-
-            // if enableAI is off or we are currently activating an ability or we can't activate abilities then end method here 
-            if (this.enableAI == false || this.IsActivatingAbility() == true || this.canActivateAbilities == false)
-                return;
-
-
-            // Grab a list of the rules
-            List<AIRule> enabledAIRules = AIRules.Where(a => a.AIActive == true).ToList();
-
-
-            // If we are randoming the rules (changes probability of abilities happening) then switch around the list. 
-            if (this.randomizeAIRules == true && enabledAIRules.Count > 1) {
-                for (int t = 0; t < enabledAIRules.Count; t++) {
-                    var tmp = enabledAIRules[t];
-                    int r = Random.Range(t, enabledAIRules.Count);
-                    enabledAIRules[t] = enabledAIRules[r];
-                    enabledAIRules[r] = tmp;
-                }
-            }
-
-
-
-            // get all potential targets in a big range if the intermission time has passed since we last retrieved potential targets or character just initiated (AI Check intermission is 0)
-            if (this.potentialTargets.Count == 0 || Time.time - this.timeOfLastAIPotentialTargetRetrieval >= this.aiPotentialTargetRetrievalIntermission + Random.Range(0f, 0.8f)) { // random range used so overlap spheres do not all happen at once causing fps drops
-
-                this.potentialTargets = ABC_Utilities.GetAllABCEntitiesInRange(meTransform.position, this.maxAIRange);
-
-                //Record the time we last retrieved potential targets
-                this.timeOfLastAIPotentialTargetRetrieval = Time.time;
-
-                // If we are randoming the potential targets then switch around the list. 
-                if (this.aiRandomizePotentialTargets == true && this.potentialTargets.Count > 1) {
-                    for (int t = 0; t < potentialTargets.Count; t++) {
-                        var tmp = potentialTargets[t];
-                        int r = Random.Range(t, potentialTargets.Count);
-                        potentialTargets[t] = potentialTargets[r];
-                        potentialTargets[r] = tmp;
-                    }
-                }
-
-                //make sure our navigational target is top of list as that is our current interest 
-                if (this.currentNavAIDestination != null && this.navAIEnabled == true && this.potentialTargets.Count(e => e.transform == this.currentNavAIDestination) > 0) {
-                    ABC_IEntity currentNavAI = this.potentialTargets.Where(e => e.transform == this.currentNavAIDestination).FirstOrDefault();
-                    this.potentialTargets.Remove(currentNavAI);
-                    this.potentialTargets.Insert(0, currentNavAI);
-                }
-
-            }
-
-
-
-            // loop through active rules
-            foreach (AIRule rule in enabledAIRules.Where(a => a.AIActive == true)) {
-
-                //If rule has a cooldown and has not yet activated (game start) then assign a cooldown (for randomness) 
-                if (rule.AIEnableRuleCooldown == true && rule.AIRuleLastActivationTime == 0) {
-                    rule.ActivateRuleCoolDown();
-                    continue;
-                }
-
-                //If rule has a cooldown and the cooldown is not over then continue 
-                if (rule.AIEnableRuleCooldown == true && Time.time - rule.AIRuleLastActivationTime <= rule.AIRuleCurrentCooldown)
-                    continue;
-
-
-                // The final target which the ability will activate on/conditions have been successfully checked with
-                GameObject finalTarget = null;
-
-                //Determine if we can activate without a target
-                bool canActivateWithoutTarget = rule.CanActivateWithoutTarget();
-
-                //If we can't activate without a target then cycle through potential targets
-                if (canActivateWithoutTarget == false) {
-                    // list through targets and check conditions (HP/Mana/Range/Status etc)
-                    foreach (ABC_IEntity obj in potentialTargets) {
-
-                        // check if obj has the right target conditions (HP/Mana/Range/Status etc)
-                        if (rule.CorrectTargetConditions(obj.gameObject, meEntity) == false)
-                            continue;
-
-                        // if condition has been met then finalise target (target might switch due to getting target of x etc)
-                        finalTarget = rule.FinaliseTarget(obj.gameObject, meEntity, potentialTargets);
-
-
-                        // If the finalise target method returns a target then we are ready to activate the ability so we can break this loop
-                        if (finalTarget != null)
-                            break;
-
-
-                    } // end looping through targets
-
-
-                    // If the final target is null then we could not find the appropriate target or satisfy the right conditions so we can move to the next rule
-                    if (finalTarget == null)
-                        continue;
-                }
-
-
-
-                //else do the AI Action
-                switch (rule.selectedAIAction) {
-                    case AIRule.AIAction.ActivateAbility:
-
-                        //set target ready for ability, if target can't be set then continue to next rule
-                        if (canActivateWithoutTarget == false && this.SetTarget(finalTarget, false, true, rule.bypassTargetLimitations) == false)
-                            continue;
-
-                        // find the ability using the ID
-                        ABC_Ability ability = this.FindAbility(rule.AIAbilityID);
-
-                        //If ability doesn't exist end here
-                        if (ability == null)
-                            continue;
-
-                        //If ability is combo blocked (with some leeway as this is AI) then find the next avaliable comboID
-                        if (ability.IsComboBlocked(meEntity, false, true)) {
-                            ability = this.FindAbility(meEntity.GetAbilityNextAvaliableComboID(ability.abilityID, true));
-
-                            //If not found continue to next rule
-                            if (ability == null)
-                                continue;
-
-                        }
-
-                        // Activate ability but skip combo check as we did it just before - if ability doesn't activate then continue to next rule 
-                        if (this.ActivateAbility(ability, true, false, true, true) == false) {
-                            this.AddToDiagnosticLog("autoCast failed for " + gameObject.name + " AbilityID: " + ability.name + "  could not activate");
-                            continue;
-
-                        }
-
-
-                        //initiate a cooldown on the rule unless ability is a combo and not at the end of the combo chain
-                        if (meEntity.IsAbilityLastInComboChain(ability.abilityID) == true)
-                            rule.ActivateRuleCoolDown();
-
-
-                        break;
-                    case AIRule.AIAction.ActivateAbilityGroup:
-
-                        //If there is no groups to enable then we can continue to next rule
-                        if (this.AbilityGroups.Where(item => rule.AIActivateAbilityGroupIDs.Contains(item.groupID) && item.groupEnabled == false).Count() == 0)
-                            continue;
-
-                        //Go for list of groups defined and enable all the abilities in them 
-                        foreach (int groupID in rule.AIActivateAbilityGroupIDs)
-                            this.EnableAbilityGroup(groupID);
-
-
-                        //initiate a cooldown on the rule 
-                        rule.ActivateRuleCoolDown();
-
-                        break;
-                    case AIRule.AIAction.ActivateBlocking:
-
-                        //If weapon blocking is not enabled or disabled (for a duration) or entity is already blocking then continue to next rule 
-                        if (this.enableWeaponBlock == false || this.weaponBlockingDisabled == true || this.isCurrentlyWeaponBlocking == true)
-                            continue;
-
-
-                        //Start auto weapon blocking 
-                        StartCoroutine(this.ActivateAutoWeaponBlock(Random.Range(rule.AIBlockDurationMin, rule.AIBlockDurationMax), 5f));
-
-
-                        //initiate a cooldown on the rule 
-                        rule.ActivateRuleCoolDown();
-
-
-                        break;
-                    case AIRule.AIAction.EquipWeapon:
-
-                        //Equip the weapon configured 
-                        StartCoroutine(this.EquipWeapon(rule.AIWeaponID));
-
-
-                        //initiate a cooldown on the rule 
-                        rule.ActivateRuleCoolDown();
-
-                        break;
-
-                }
-
-
-                //Record the time we last did an AI Action on a global scale
-                this.timeOfLastAIAction = Time.time;
-
-                //Reroll the intermission to get a new random number between the minimum and maximum 
-                this.AICheckIntermission = Random.Range(this.minimumAICheckIntermission, this.maximumAICheckIntermission);
-
-
-
-                // we have successfully completed the AI Action by getting this far then we can return here and wait for the method to be called again
-                return;
-
-
-            } // end looping through rules
-        }
-
-
-        /// <summary>
         /// Main function which handles auto selecting a target. 
         /// </summary>
         private void AutoTargetHandler() {
@@ -15364,7 +14398,7 @@ namespace ABCToolkit {
                     this.ActivateGraphic(ControllerGraphicType.CrossHairOverride);
 
 
-                if (this.IsReloading() == true || this.isCurrentlyWeaponBlocking || this.isCurrentlyWeaponParrying || this.inIdleMode || this.AINavigationInProgress() || this.hitRestrictsAbilityActivation || this.IsActivatingAbility() || this.weaponBeingToggled || Time.time - this.timeOfLastAbilityActivation <= this.abilityActivationInterval + Mathf.Max(0, this.tempAbilityActivationIntervalAdjustment) + (this.tempAbilityActivationIntervalAdjustment < 0 ? 0 : 0.2f)) {
+                if (this.IsReloading() == true || this.isCurrentlyWeaponBlocking || this.isCurrentlyWeaponParrying || this.inIdleMode || this.hitRestrictsAbilityActivation || this.IsActivatingAbility() || this.weaponBeingToggled || Time.time - this.timeOfLastAbilityActivation <= this.abilityActivationInterval + Mathf.Max(0, this.tempAbilityActivationIntervalAdjustment) + (this.tempAbilityActivationIntervalAdjustment < 0 ? 0 : 0.2f)) {
                     //If doing other things (activating, just activated (with breathing space unless it's -tempinterval as thats probably quick firing), blocking, parrying etc) then don't start any crosshair animations
 
                 } else if (this.prioritiseCurrentWeaponCrosshairAnimation == true && this.CurrentEquippedWeapon != null && this.CurrentEquippedWeapon.useWeaponCrosshairOverrideAnimations == true) {
@@ -15485,590 +14519,6 @@ namespace ABCToolkit {
 
 
         }
-
-        /// <summary>
-        /// Will make the entity wander to a random position on the NavMesh
-        /// </summary>
-        private void AINavigationWanderHandler() {
-
-            //If not active then end handler here
-            if (this.wanderTillDestinationSet == false || this.navAIEnabled == false || this.blockNavAI == true || this.meNavAgent.enabled == false || this.meTransform.gameObject.activeInHierarchy == false || this.IsActivatingAbility() == true)
-                return;
-
-
-            //If the entity is moving towards our goal destination then we can return as we don't want to start wandering
-            if (this.navAIDestinationSet == true)
-                return;
-
-            //If we are wandering and within stopping distance then we can stop wandering as we have reached the random point 
-            if (this.navAIWanderSet == true && this.AINavigationWithinStoppingDistance())
-                this.ClearAINavigationDestination();
-
-
-            //if it's too early to start wandering then return here
-            if (Time.time - this.navAIWanderSetTime < this.wanderInterval)
-                return;
-
-
-            //Get random point on NavMesh 
-            Vector3 randomDestination = meTransform.position + Random.insideUnitSphere * this.wanderAreaRange;
-            NavMeshHit hit;
-
-
-
-            //if Position is not found then return
-            if (NavMesh.SamplePosition(randomDestination, out hit, this.wanderAreaRange, 1) == false)
-                return;
-
-
-            // else set destination to new random destination 
-            this.meNavAgent.SetDestination(hit.position);
-            this.meNavAgent.speed = this.wanderSpeed;
-
-            //No longer require a stopping distance as this is a random wander so will set it to a hardcoded value
-            this.meNavAgent.stoppingDistance = 2f;
-
-            //If the agent was stopped previously start it up again
-            if (this.meNavAgent.isStopped == true)
-                this.meNavAgent.isStopped = false;
-
-            //we are wandering
-            this.navAIWanderSet = true;
-            this.navAIWanderSetTime = Time.time;
-
-            //Start wander animation
-            this.StartAnimation(ControllerAnimationState.AINavWander, this.Ani);
-            this.StartAnimationRunner(ControllerAnimationState.AINavWander, meEntity.animationRunner);
-
-
-
-        }
-
-        /// <summary>
-        /// Will set the defined stopping distance for the AI Navigation
-        /// </summary>
-        /// <param name="ValidateOnly">If true then the stopping distance will only be set if the current stopping distance is not between the minimum and max configured</param>
-        private void AINavigationSetStoppingDistance(bool ValidateOnly = false) {
-
-            //If not active then end manager here
-            if (this.navAIEnabled == false || this.blockNavAI == true || meNavAgent.enabled == false || meTransform.gameObject.activeInHierarchy == false || this.IsActivatingAbility() == true)
-                return;
-
-            //If we validating only and stopping distance is within min and max then end here 
-            if (ValidateOnly == true && this.meNavAgent.stoppingDistance >= this.minimumStopDistance && this.meNavAgent.stoppingDistance <= this.maximumStopDistance)
-                return;
-
-
-            this.meNavAgent.stoppingDistance = Random.Range(this.minimumStopDistance, this.maximumStopDistance);
-
-        }
-
-        /// <summary>
-        /// Will handle what happens when an AI entity is falling (requires navigation to be enabled)
-        /// </summary>
-        private void AINavigationFallingHandler() {
-
-            if (this.navAIEnabled == false)
-                return;
-
-
-            //Record if currently in air
-            bool currentlyInAir = meEntity.isInTheAir == true;
-
-            //If not in the air then make sure falling animation is not playing
-            if (currentlyInAir == false && this.navAIFalling == true) {
-                this.EndAnimation(ControllerAnimationState.AINavFalling, this.Ani);
-                this.EndAnimationRunner(ControllerAnimationState.AINavFalling, meEntity.animationRunner);
-                this.navAIFalling = false;
-            }
-
-
-            //If not active then end handler here
-            if (this.blockNavAI == true || meTransform.gameObject.activeInHierarchy == false || this.IsActivatingAbility() == true)
-                return;
-
-
-            //If the entity is in air then start the falling animation
-            if (currentlyInAir == true) {
-                this.StartAnimationRunner(ControllerAnimationState.AINavFalling, meEntity.animationRunner);
-                this.StartAnimation(ControllerAnimationState.AINavFalling, this.Ani);
-                this.navAIFalling = true;
-            }
-
-        }
-
-        /// <summary>
-        /// Sets the destination of the NavMeshAgent to the goal destination defined in settings
-        /// </summary>
-        private void AINavigationHandler() {
-
-            //If not active then end manager here
-            if (this.navAIEnabled == false || this.blockNavAI == true || meNavAgent.enabled == false || meTransform.gameObject.activeInHierarchy == false || this.IsActivatingAbility() == true)
-                return;
-
-            //try and find destination
-            this.FindAINavigationDestination();
-
-
-            //If destination has not been found then end here
-            if (this.currentNavAIDestination == null)
-                return;
-
-
-            // If we are not in line of sight of the destination or they are out of range or are no longer active then clear the destination 
-            if (this.AINavigationEntityInSight(this.currentNavAIDestination) == false || Vector3.Distance(this.currentNavAIDestination.transform.position, this.meTransform.position) > this.destinationSearchRadius || this.currentNavAIDestination.gameObject.activeInHierarchy == false) {
-
-                //Remove or find new destination if previously set 
-                if (this.navAIDestinationSet == true) {
-
-                    //Clear Destination
-                    this.ClearAINavigationDestination();
-
-                    //Try and find new destination 
-                    this.FindAINavigationDestination();
-
-                    //If no destination found then go to idle if set and end here
-                    if (this.currentNavAIDestination == null) {
-
-                        //Toggle to idle mode as we no longer have a destination
-                        if (this.navAIToggleIdleMode)
-                            StartCoroutine(this.ToggleIdleMode(true));
-
-
-                        return;
-                    }
-
-                }
-
-            }
-
-
-            //If this is first time setting the destination then set the random stopping distance
-            if (this.navAIDestinationSet == false) {
-
-                this.AINavigationSetStoppingDistance();
-
-                //Toggle out of idle mode when destination set (if enabled) 
-                if (this.navAIToggleIdleMode) {
-
-                    if (this.navAITriggerIdleModeForTags.Count > 0 && ABC_Utilities.ObjectHasTag(this.currentNavAIDestination.gameObject, ABC_Utilities.ConvertTags(this.meEntity, this.navAITriggerIdleModeForTags)))
-                        StartCoroutine(this.ToggleIdleMode(true));
-                    else
-                        StartCoroutine(this.ToggleIdleMode(false));
-
-                }
-
-            }
-
-
-            //If for some reason the nav agent has slipped off the mesh then we will warp them back 
-            if (this.meNavAgent.enabled == true && this.meNavAgent.isOnNavMesh == false) {
-                NavMeshHit hit;
-                if (NavMesh.SamplePosition(this.transform.position, out hit, 5.0f, NavMesh.AllAreas)) {
-                    this.meNavAgent.Warp(hit.position);
-                }
-            }
-
-            //If we got this far the entities knows about the destination so set it and stopping distance
-            this.meNavAgent.SetDestination(this.currentNavAIDestination.position);
-
-            //Tell rest of component that main destination has been set with this also stop the wandering flag
-            this.navAIDestinationSet = true;
-
-            if (this.navAIWanderSet) {
-                this.navAIWanderSet = false;
-                this.EndAnimation(ControllerAnimationState.AINavWander, this.Ani);
-                this.EndAnimationRunner(ControllerAnimationState.AINavWander, meEntity.animationRunner);
-            }
-
-
-            //If idle mode being toggled then don't move
-            if (this.idleModeBeingToggled == true && this.navAIPreventMovementWhenSwitchingIdleMode) {
-
-                this.meNavAgent.speed = 0f;
-
-            } else if (this.AINavigationWithinStoppingDistance()) {
-                //If we are within the stopping distance then call the at destination behaviour manager else animate movement
-                this.AINavigationAtDestinationBehaviourManager();
-
-            } else if (this.navAIChangeDestinationMovingTowards && Vector3.Distance(this.meTransform.position, this.currentNavAIDestination.position) <= this.navAIChangeDestinationMoveTowardsStartingDistance + 1) {
-                // else if entity is moving towards destination and the distance between entity and destination has not increased since the entity started moving then start the move forward animation and set the speed 
-                this.StartAnimation(ControllerAnimationState.AINavMoveForward, this.Ani);
-                this.StartAnimationRunner(ControllerAnimationState.AINavMoveForward, meEntity.animationRunner);
-                this.meNavAgent.speed = this.moveForwardSpeed += this.navSpeedAdjustment;
-
-            } else {
-                // else move towards destination as normal stopping any previous stop at destination behaviours
-                this.AINavigationStopDestinationBehaviours();
-
-                //set speed and start animation
-                this.StartAnimation(ControllerAnimationState.AINavMoveToDestination, this.Ani);
-                this.StartAnimationRunner(ControllerAnimationState.AINavMoveToDestination, meEntity.animationRunner);
-                this.meNavAgent.speed = this.speed += this.navSpeedAdjustment;
-
-            }
-
-            //If the agent was stopped previously start it up again
-            if (this.meNavAgent.isStopped == true)
-                this.meNavAgent.isStopped = false;
-
-
-        }
-
-        /// <summary>
-        /// Will return true if the entity is currently moving towards AI Nav destination or any At Destination Behaviours are running
-        /// </summary>
-        /// <returns>True if AI Navigation is in progress, else false</returns>
-        private bool AINavigationInProgress() {
-
-            //If navigation not turned on then end manager here
-            if (this.navAIEnabled == false || meNavAgent.enabled == false)
-                return false;
-
-            //If no target 
-            if (this.navAIDestinationSet == false)
-                return false;
-
-            if (this.AINavigationWithinStoppingDistance() == true && this.navAIChangeDestinationMovingTowards == false && this.navAIChangeDestinationMovingAway == false && this.navAIRotateAroundDestination == false)
-                return false;
-
-
-            //If we got this far then AI navigation is in progress
-            return true;
-
-
-        }
-
-        /// <summary>
-        /// Will turn the entity to face the AI navigation destination
-        /// </summary>
-        private void AINavigationTurnToDestination() {
-
-            //If not active or activating abilities then end manager here
-            if (this.navAIEnabled == false || meTransform.gameObject.activeInHierarchy == false || this.IsActivatingAbility() == true)
-                return;
-
-            if (this.navAIDestinationSet == true && this.alwaysFaceDestination && this.IsActivatingAbility() == false) {
-                Vector3 lookDirection = currentNavAIDestination.transform.position - meTransform.position;
-                //Reset y so it's always just turning to the destination
-                lookDirection.y = 0;
-
-                meTransform.rotation = Quaternion.Lerp(meTransform.rotation, Quaternion.LookRotation(lookDirection), this.faceDestinationTurnSpeed * Time.deltaTime);
-
-            }
-        }
-
-        /// <summary>
-        /// Manages the behaviour once the entity reaches the destination includes stop walking animations and special behaviours like rotating round or changing stopping distance to move forward or back
-        /// </summary>
-        private void AINavigationAtDestinationBehaviourManager() {
-
-            //If not active then end manager here
-            if (this.navAIEnabled == false || this.blockNavAI == true || meTransform.gameObject.activeInHierarchy == false)
-                return;
-
-            //Stop main movement animation (Interval in to it spamming the end animation call)
-
-            if (this.navAIStopAnimationTime == 0 || Time.time - this.navAIStopAnimationTime >= 0.5f) {
-                this.EndAnimation(ControllerAnimationState.AINavMoveToDestination, this.Ani);
-                this.EndAnimationRunner(ControllerAnimationState.AINavMoveToDestination, meEntity.animationRunner);
-                this.navAIStopAnimationTime = Time.time;
-            }
-
-            //If activating ability then end here
-            if (this.IsActivatingAbility() == true)
-                return;
-
-            if (this.navAIDestinationSet == false || this.inIdleMode == true)
-                return;
-
-
-            //For game start set random start time for rotate around intervals (stops all enemies rotating in sync)
-            if (this.navAIRotateAroundDestinationStartTime == 0)
-                this.navAIRotateAroundDestinationStartTime = Time.time + Random.Range(0f, this.rotationInterval + 10f);
-
-            //If we was previously in the behaviour of changing distance and moving towards we can turn this off now 
-            if (this.navAIChangeDestinationMovingTowards) {
-                this.navAIChangeDestinationMovingTowards = false;
-                this.EndAnimation(ControllerAnimationState.AINavMoveForward, this.Ani);
-                this.EndAnimationRunner(ControllerAnimationState.AINavMoveForward, meEntity.animationRunner);
-            }
-
-
-            //determine if we can rotate around target by doing a dice roll and making sure the last rotation ended more then interval time ago 
-            if (this.enableRotationBehaviour && ABC_Utilities.DiceRoll(0f, 49f) && (Time.time - navAIRotateAroundDestinationStartTime > this.rotationInterval + this.navAIRotateAroundDestinationDuration)) {
-                this.navAIRotateAroundDestination = true;
-                this.navAIRotateAroundDestinationStartTime = Time.time;
-                this.navAIRotateAroundDestinationDuration = Random.Range(this.rotationMinDuration, this.rotationMaxDuration);
-            }
-
-
-            //determine if we can change distance from target by doing a dice roll and making sure the last destination change ended more then interval time ago 
-            if (this.enableDistanceBehaviour && ABC_Utilities.DiceRoll(50f, 100f) && (Time.time - this.navAIChangeDestinationDistanceStartTime > this.distanceChangeInterval)) {
-                this.navAIChangeDestinationDistanceStartTime = Time.time;
-
-                //Loop through dice rolling until logic has decided to move forward or back 
-                bool diceLocked = true;
-
-                while (diceLocked) {
-
-                    float diceRoll = Random.Range(0f, 100f);
-
-                    //If we are moving forwards then set the stopping distance to a number lower then what we are already on (Navagent will move automatically move due to the stopping distance being lower)
-                    if (ABC_Utilities.DiceRoll(0f, 49f)) {
-                        //if we are already at lowest distance then can't move forward
-                        if (this.meNavAgent.stoppingDistance == this.minimumStopDistance)
-                            break;
-                        //Update stopping distance so it is closer
-                        this.meNavAgent.stoppingDistance = Random.Range(this.meNavAgent.stoppingDistance, this.minimumStopDistance);
-                        //Tell rest of component we are moving towards destination
-                        this.navAIChangeDestinationMovingTowards = true;
-                        //Start the moving forward animation to get a head start
-                        this.StartAnimation(ControllerAnimationState.AINavMoveForward, this.Ani);
-                        this.StartAnimationRunner(ControllerAnimationState.AINavMoveForward, meEntity.animationRunner);
-                        //Track the current distance between destination and entity. If this distance ever grows then this behaviour will stop as entity is no longer at destination and needs to reach it via normal method
-                        this.navAIChangeDestinationMoveTowardsStartingDistance = Vector3.Distance(meTransform.position, this.currentNavAIDestination.position);
-                        //Stop loop
-                        diceLocked = false;
-                    }
-
-                    //If we are moving backwards then set the stopping distance to a number higher then what we are already on and also set the boolean to move the entity back away from current destination
-                    if (ABC_Utilities.DiceRoll(50f, 100f) && diceLocked == true) {
-                        //if we are already at highest distance then can't move back
-                        if (this.meNavAgent.stoppingDistance == this.maximumStopDistance)
-                            break;
-                        //update stopping distance so it's further away
-                        this.meNavAgent.stoppingDistance = Random.Range(this.meNavAgent.stoppingDistance, this.maximumStopDistance);
-                        //Set property to true so entity will start moving backwards (is not automatic like moving towards)
-                        this.navAIChangeDestinationMovingAway = true;
-                        //stop loop
-                        diceLocked = false;
-                    }
-                }
-
-            }
-
-
-
-        }
-
-
-        /// <summary>
-        /// Will rotate the entity around the destination
-        /// </summary>
-        private void AINavigationRotateAroundDestination() {
-
-            //If not active then end manager here
-            if (this.navAIEnabled == false || this.blockNavAI == true || this.navAIRotateAroundDestination == false || meTransform.gameObject.activeInHierarchy == false || this.IsActivatingAbility() == true)
-                return;
-
-            //if we have rotated for the duration set then make sure to turn off rotation
-            if (Time.time - navAIRotateAroundDestinationStartTime > this.navAIRotateAroundDestinationDuration) {
-                this.navAIRotateAroundDestination = false;
-                this.EndAnimation(this.navAIRotateAroundDirection == 1 ? ControllerAnimationState.AINavRotateAroundRight : ControllerAnimationState.AINavRotateAroundLeft, this.Ani);
-                this.EndAnimationRunner(this.navAIRotateAroundDirection == 1 ? ControllerAnimationState.AINavRotateAroundRight : ControllerAnimationState.AINavRotateAroundLeft, meEntity.animationRunner);
-                //reset direction
-                this.navAIRotateAroundDirection = 0;
-            }
-
-
-            if (this.currentNavAIDestination == null || this.navAIRotateAroundDestination == false)
-                return;
-
-
-            //Random direction (1 for right, 2 for left) - if 0 then not set yet
-            if (this.navAIRotateAroundDirection == 0)
-                this.navAIRotateAroundDirection = Random.Range(1, 3);
-
-            //Rotate around destination by speed set
-            transform.RotateAround(this.currentNavAIDestination.position, this.navAIRotateAroundDirection == 1 ? Vector3.down : Vector3.up, this.rotationSpeed * Time.deltaTime);
-
-            //Start Animation
-            this.StartAnimation(this.navAIRotateAroundDirection == 1 ? ControllerAnimationState.AINavRotateAroundRight : ControllerAnimationState.AINavRotateAroundLeft, this.Ani);
-            this.StartAnimationRunner(this.navAIRotateAroundDirection == 1 ? ControllerAnimationState.AINavRotateAroundRight : ControllerAnimationState.AINavRotateAroundLeft, meEntity.animationRunner);
-        }
-
-
-        /// <summary>
-        /// Will move the entity away from the destination, used once the stopping distance is increased to move the entity to that position
-        /// </summary>
-        private void AINavigationMoveAwayFromDestination(bool ForceMoveAway = false) {
-
-            //If not active then end manager here
-            if (this.navAIEnabled == false || this.blockNavAI == true || this.navAIChangeDestinationMovingAway == false && ForceMoveAway == false || this.currentNavAIDestination == null || meTransform.gameObject.activeInHierarchy == false || this.IsActivatingAbility() == true)
-                return;
-
-
-            //If we are focing the move away then push back 
-            if (ForceMoveAway == true && this.meNavAgent.stoppingDistance <= this.maximumStopDistance) {
-                this.meNavAgent.stoppingDistance += Random.Range(0.5f, 6f);
-            }
-
-            //Stopping distance
-            float stoppingDistance = this.meNavAgent.stoppingDistance;
-
-            //If we are close to the stopping distance then end the moving away 
-            if (Vector3.Distance(this.meTransform.position, this.currentNavAIDestination.position) >= stoppingDistance - 2.5) {
-                this.navAIChangeDestinationMovingAway = false;
-
-                if (this.navAIStopAnimationTime == 0 || Time.time - this.navAIStopAnimationTime >= 0.5f) {
-                    this.EndAnimation(ControllerAnimationState.AINavMoveBack, this.Ani);
-                    this.EndAnimationRunner(ControllerAnimationState.AINavMoveBack, meEntity.animationRunner);
-                    this.navAIStopAnimationTime = Time.time;
-                }
-
-                return;
-            }
-
-            //else move back
-            transform.position = Vector3.MoveTowards(this.meTransform.position, this.currentNavAIDestination.position, -1 * this.moveBackSpeed * Time.deltaTime);
-
-            //Start Animation
-            this.StartAnimation(ControllerAnimationState.AINavMoveBack, this.Ani);
-            this.StartAnimationRunner(ControllerAnimationState.AINavMoveBack, meEntity.animationRunner);
-        }
-
-        /// <summary>
-        /// Determines if the entity is in sight of the destination. If the entity was already previously aware of the destination then only range is checked else range and line of sight is checked. 
-        /// </summary>
-        /// <param name="Entity">Object to check if in line of sight</param>
-        /// <returns>true if entity is in range and is either facing the destination or is already aware of the target, else false</returns>
-        private bool AINavigationEntityInSight(Transform Entity) {
-
-            if (Entity == null)
-                return false;
-
-            //If we don't care about line of sight then return true
-            if (this.lineOfSightRequired == false)
-                return true;
-
-
-            // if entity is aware of destination presence already then return true; 
-            if (this.currentNavAIDestination != null && this.navAIDestinationSet == true)
-                return true;
-
-            // if distance between the entity and destination is greater then the line of sight then return false as we too far away 
-            if (meNavAgent.isActiveAndEnabled && meNavAgent.remainingDistance > this.lineOfSightRange)
-                return false;
-
-            //Check if entity is looking at the destination 
-            var dir = (Entity.position - meTransform.position).normalized;
-            var dot = Vector3.Dot(dir, meTransform.forward);
-
-            //If facing the entity
-            if (dot >= 0.3) {
-
-                //Raycast from position to the direction of the entity
-                Ray ray = new Ray(meTransform.position + new Vector3(0, 1, 0), dir);
-
-                RaycastHit rayHit;
-                if (Physics.Raycast(ray, out rayHit)) {
-
-                    //If we hit something other then the Entity then there is an obstruction so entity is not in sight
-                    if (ABC_Utilities.GetStaticABCEntity(rayHit.transform.gameObject).transform != Entity.transform)
-                        return false;
-
-
-                }
-
-                // if we got this far then entity is in sight to return true 
-                return true;
-
-            } else {
-                //If the entity is not already aware of the destination or can't see the destination then return false
-                return false;
-            }
-
-        }
-
-        /// <summary>
-        /// Invoked repeatingly to find a new AI target every x amount of seconds
-        /// </summary>
-        private void AINavigationNewTargetInterval() {
-
-            //Find new destination enabling the force new destination parameter
-            this.FindAINavigationDestination(true);
-
-        }
-
-        /// <summary>
-        /// Will search in a radius and set the AI navigation destination if the correct tag has been found
-        /// </summary>
-        /// <param name="ForceNewDestination">If true then a new destination will be found regardless</param>
-        private void FindAINavigationDestination(bool ForceNewDestination = false) {
-
-            if (ForceNewDestination == false && this.currentNavAIDestination != null || this.navAIEnabled == false || this.blockNavAI == true || this.IsActivatingAbility() == true)
-                return;
-
-            // get all objects in a  range
-            List<ABC_IEntity> potentialAINavDestinations = ABC_Utilities.GetAllABCEntitiesInRange(meTransform.position, this.destinationSearchRadius, true);
-
-            //remove self from list 
-            if (potentialAINavDestinations.Contains(meEntity))
-                potentialAINavDestinations.Remove(meEntity);
-
-            //Store list of people we follow 
-            List<string> tagList = this.destinationTags;
-
-            //Do we randomise the tags
-            if (this.randomizeDestinationTags == true && tagList.Count > 1) {
-                for (int t = 0; t < tagList.Count; t++) {
-                    var tmp = tagList[t];
-                    int r = Random.Range(t, tagList.Count);
-                    tagList[t] = tagList[r];
-                    tagList[r] = tmp;
-                }
-            }
-
-
-            //Loop through our destination tags in order till we find a match 
-            foreach (string tag in ABC_Utilities.ConvertTags(this.meEntity, this.destinationTags)) {
-
-                //loop through to find correct one that matches tag
-                foreach (ABC_IEntity potDestination in potentialAINavDestinations) {
-
-                    //If tag doesn't match move on
-                    if (ABC_Utilities.ObjectHasTag(potDestination.gameObject, tag) == false)
-                        continue;
-
-                    //If entity is not in sight then move on
-                    if (this.AINavigationEntityInSight(potDestination.transform) == false)
-                        continue;
-
-                    //If we got this far then correct object has been found so set destination and end here
-                    this.currentNavAIDestination = potDestination.transform;
-
-                    return;
-
-                }
-            }
-        }
-
-        /// <summary>
-        /// Will determine if the entity is within stopping distance of the destination
-        /// </summary>
-        /// <returns>True if within stopping distance, else false</returns>
-        private bool AINavigationWithinStoppingDistance() {
-
-            //Declare stopping distance
-            float stoppingDistance = this.meNavAgent.stoppingDistance;
-
-            //If we have a nav target who we can't currently attack then increase stopping distance if we was about to get to close
-            if (this.currentNavAIDestination != null && ABC_Utilities.GetStaticABCEntity(this.currentNavAIDestination.gameObject).CanBeTargetedByObject(meEntity.gameObject) == false && stoppingDistance <= 7)
-                stoppingDistance += 5;
-
-            // if distance between the entity and nav agents destination is less then the stopping distance then return true  
-            if (this.meNavAgent.remainingDistance <= stoppingDistance && (this.meNavAgent.hasPath == false || (this.stopDistanceCheckVelocity == false || this.stopDistanceCheckVelocity == true && this.meNavAgent.velocity.sqrMagnitude == 0f)))
-                return true;
-
-
-
-            // else we are not within the stopping distance
-            return false;
-
-
-        }
-
 
         /// <summary>
         /// Disables the restrictAbilityActivation variable allowing the entity to activate abilities again
@@ -16204,18 +14654,13 @@ namespace ABCToolkit {
                     if (this.targetObject == Target)
                         this.RemoveTarget();
 
-                    //Lets move back if doing AI Navigation for space as we not attacking
-                    this.AINavigationMoveAwayFromDestination(true);
+                    
 
                     //Log information
                     StartCoroutine(this.AddToAbilityLog("Unable to target: " + Target.name + " as the entity already has the limited amount of targeters"));
 
                     this.AddToDiagnosticLog("Unable to target: " + Target.name + " as the entity already has the limited amount of targeters");
                     return false;
-                } else {
-
-                    //make sure stopping distance is set right
-                    AINavigationSetStoppingDistance(true);
                 }
 
 
@@ -16825,7 +15270,6 @@ namespace ABCToolkit {
             bool blockRunnerOverrides = false;
 
             //Used to Check to see if an override clip should be played instead on navigational states
-            Weapon currentWeapon = null;
             AnimatorClipRunnerOverride clipRunnerOverride = null;
 
 
@@ -16838,253 +15282,6 @@ namespace ABCToolkit {
                     animationClipMask = this.crossHairOverrideAnimationRunnerMask.AvatarMask;
 
                     blockRunnerOverrides = true;
-
-                    break;
-                case ControllerAnimationState.AINavMoveToDestination:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animationClip = this.toDestinationAnimationRunnerClip.AnimationClip;
-                    animationClipSpeed = this.toDestinationAnimationRunnerClipSpeed;
-                    animationClipDelay = this.toDestinationAnimationRunnerClipDelay;
-                    animationClipMask = this.toDestinationAnimationRunnerMask.AvatarMask;
-
-                    startAnimationIfAlreadyRunning = false;
-
-                    //Check to see if an override clip should be played instead
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.toDestinationAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                        animationClipSpeed = clipRunnerOverride.animationRunnerClipSpeed;
-                        animationClipDelay = clipRunnerOverride.animationRunnerClipDelay;
-                        animationClipMask = clipRunnerOverride.animationRunnerMask.AvatarMask;
-
-                        if (animationClipMask != null)
-                            currentAnimatorClipOverride = this.toDestinationAnimationRunnerClip.AnimationClip;
-
-                    }
-
-
-
-
-                    break;
-
-                case ControllerAnimationState.AINavWander:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animationClip = this.wanderAnimationRunnerClip.AnimationClip;
-                    animationClipSpeed = this.wanderAnimationRunnerClipSpeed;
-                    animationClipDelay = this.wanderAnimationRunnerClipDelay;
-                    animationClipMask = this.wanderAnimationRunnerMask.AvatarMask;
-
-                    startAnimationIfAlreadyRunning = false;
-
-
-                    //Check to see if an override clip should be played instead
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.wanderAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                        animationClipSpeed = clipRunnerOverride.animationRunnerClipSpeed;
-                        animationClipDelay = clipRunnerOverride.animationRunnerClipDelay;
-                        animationClipMask = clipRunnerOverride.animationRunnerMask.AvatarMask;
-
-                        if (animationClipMask != null)
-                            currentAnimatorClipOverride = this.wanderAnimationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-
-                case ControllerAnimationState.AINavRotateAroundLeft:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animationClip = this.rotateAroundLeftAnimationRunnerClip.AnimationClip;
-                    animationClipSpeed = this.rotateAroundLeftAnimationRunnerClipSpeed;
-                    animationClipDelay = this.rotateAroundLeftAnimationRunnerClipDelay;
-                    animationClipMask = this.rotateAroundLeftAnimationRunnerMask.AvatarMask;
-
-                    startAnimationIfAlreadyRunning = false;
-
-                    //Check to see if an override clip should be played instead
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.rotateAroundLeftAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                        animationClipSpeed = clipRunnerOverride.animationRunnerClipSpeed;
-                        animationClipDelay = clipRunnerOverride.animationRunnerClipDelay;
-                        animationClipMask = clipRunnerOverride.animationRunnerMask.AvatarMask;
-
-                        if (animationClipMask != null)
-                            currentAnimatorClipOverride = this.rotateAroundLeftAnimationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-
-                case ControllerAnimationState.AINavRotateAroundRight:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animationClip = this.rotateAroundRightAnimationRunnerClip.AnimationClip;
-                    animationClipSpeed = this.rotateAroundRightAnimationRunnerClipSpeed;
-                    animationClipDelay = this.rotateAroundRightAnimationRunnerClipDelay;
-                    animationClipMask = this.rotateAroundRightAnimationRunnerMask.AvatarMask;
-
-                    startAnimationIfAlreadyRunning = false;
-
-                    //Check to see if an override clip should be played instead
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.rotateAroundRightAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                        animationClipSpeed = clipRunnerOverride.animationRunnerClipSpeed;
-                        animationClipDelay = clipRunnerOverride.animationRunnerClipDelay;
-                        animationClipMask = clipRunnerOverride.animationRunnerMask.AvatarMask;
-
-                        if (animationClipMask != null)
-                            currentAnimatorClipOverride = this.rotateAroundRightAnimationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-
-                case ControllerAnimationState.AINavMoveForward:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animationClip = this.moveForwardAnimationRunnerClip.AnimationClip;
-                    animationClipSpeed = this.moveForwardAnimationRunnerClipSpeed;
-                    animationClipDelay = this.moveForwardAnimationRunnerClipDelay;
-                    animationClipMask = this.moveForwardAnimationRunnerMask.AvatarMask;
-
-                    startAnimationIfAlreadyRunning = false;
-
-                    //Check to see if an override clip should be played instead
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.moveForwardAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                        animationClipSpeed = clipRunnerOverride.animationRunnerClipSpeed;
-                        animationClipDelay = clipRunnerOverride.animationRunnerClipDelay;
-                        animationClipMask = clipRunnerOverride.animationRunnerMask.AvatarMask;
-
-                        if (animationClipMask != null)
-                            currentAnimatorClipOverride = this.moveForwardAnimationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-                case ControllerAnimationState.AINavMoveBack:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animationClip = this.moveBackAnimationRunnerClip.AnimationClip;
-                    animationClipSpeed = this.moveBackAnimationRunnerClipSpeed;
-                    animationClipDelay = this.moveBackAnimationRunnerClipDelay;
-                    animationClipMask = this.moveBackAnimationRunnerMask.AvatarMask;
-
-                    startAnimationIfAlreadyRunning = false;
-
-                    //Check to see if an override clip should be played instead
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.moveBackAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                        animationClipSpeed = clipRunnerOverride.animationRunnerClipSpeed;
-                        animationClipDelay = clipRunnerOverride.animationRunnerClipDelay;
-                        animationClipMask = clipRunnerOverride.animationRunnerMask.AvatarMask;
-
-                        if (animationClipMask != null)
-                            currentAnimatorClipOverride = this.moveBackAnimationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-                case ControllerAnimationState.AINavFalling:
-
-                    //Prevent animation from running if not in air 
-                    if (meEntity.isInTheAir == false)
-                        return;
-
-                    animationClip = this.aiFallAnimationRunnerClip.AnimationClip;
-                    animationClipSpeed = this.aiFallAnimationRunnerClipSpeed;
-                    animationClipDelay = this.aiFallAnimationRunnerClipDelay;
-                    animationClipMask = this.aiFallAnimationRunnerMask.AvatarMask;
-
-                    startAnimationIfAlreadyRunning = false;
-                    interruptCurrentAnimation = false;
-
-
-                    //Check to see if an override clip should be played instead
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.aiFallAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                        animationClipSpeed = clipRunnerOverride.animationRunnerClipSpeed;
-                        animationClipDelay = clipRunnerOverride.animationRunnerClipDelay;
-                        animationClipMask = clipRunnerOverride.animationRunnerMask.AvatarMask;
-
-                        if (animationClipMask != null)
-                            currentAnimatorClipOverride = this.aiFallAnimationRunnerClip.AnimationClip;
-                    } else {
-
-                        //Interrupt animation if clip override running 
-                        if (AnimationRunner.IsAnimationClipOverrideRunning() == true)
-                            interruptCurrentAnimation = true;
-                    }
 
                     break;
             }
@@ -17117,13 +15314,6 @@ namespace ABCToolkit {
 
             //If true then the animation will interrupt instead of smoothly end (used for coming out of crosshair override animation)
             bool interruptInsteadOfEnd = false;
-
-
-            //Used to Check to see if an override clip should be played instead on navigational states
-            Weapon currentWeapon = null;
-            AnimatorClipRunnerOverride clipRunnerOverride = null;
-
-
             switch (State) {
                 case ControllerAnimationState.CrossHairOverride:
 
@@ -17134,137 +15324,7 @@ namespace ABCToolkit {
 
                     break;
 
-                case ControllerAnimationState.AINavMoveToDestination:
-
-                    animationClip = this.toDestinationAnimationRunnerClip.AnimationClip;
-
-                    //Check to see if an override clip will be playing instead 
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.toDestinationAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                    }
-
-
-                    break;
-
-                case ControllerAnimationState.AINavWander:
-
-                    animationClip = this.wanderAnimationRunnerClip.AnimationClip;
-
-                    //Check to see if an override clip will be playing instead 
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.wanderAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-
-                case ControllerAnimationState.AINavRotateAroundLeft:
-
-                    animationClip = this.rotateAroundLeftAnimationRunnerClip.AnimationClip;
-
-                    //Check to see if an override clip will be playing instead 
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.rotateAroundLeftAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-
-                case ControllerAnimationState.AINavRotateAroundRight:
-
-                    animationClip = this.rotateAroundRightAnimationRunnerClip.AnimationClip;
-
-                    //Check to see if an override clip will be playing instead 
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.rotateAroundRightAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-
-                case ControllerAnimationState.AINavMoveForward:
-
-                    animationClip = this.moveForwardAnimationRunnerClip.AnimationClip;
-
-                    //Check to see if an override clip will be playing instead 
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.moveForwardAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-                case ControllerAnimationState.AINavMoveBack:
-
-                    animationClip = this.moveBackAnimationRunnerClip.AnimationClip;
-
-                    //Check to see if an override clip will be playing instead 
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.moveBackAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                    }
-
-                    break;
-                case ControllerAnimationState.AINavFalling:
-
-                    animationClip = this.aiFallAnimationRunnerClip.AnimationClip;
-
-                    //Check to see if an override clip will be playing instead 
-                    currentWeapon = this.meEntity.currentEquippedWeapon;
-                    clipRunnerOverride = null;
-
-                    //If a weapon is equipped 
-                    if (currentWeapon != null && this.inIdleMode == false && this.aiFallAnimationRunnerEnableWeaponAnimationOverrides == true)
-                        clipRunnerOverride = currentWeapon.ConvertClipIntoOverrideClip(animationClip);
-
-                    //If we found a clip runner override then update the properties
-                    if (clipRunnerOverride != null) {
-                        animationClip = clipRunnerOverride.animationRunnerClip.AnimationClip;
-                    }
-
-                    break;
+                
             }
 
             // if animator parameter is null or animation runner is not given then animation can't start so end here. 
@@ -17302,89 +15362,7 @@ namespace ABCToolkit {
                     animatorOnValue = this.crossHairOverrideAnimatorOnValue;
 
                     break;
-                case ControllerAnimationState.AINavMoveToDestination:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animatorParameterType = this.toDestinationAnimatorParameterType;
-                    animatorParameter = this.toDestinationAnimatorParameter;
-                    animatorOnValue = this.toDestinationAnimatorOnValue;
-
-                    break;
-
-                case ControllerAnimationState.AINavWander:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animatorParameterType = this.wanderAnimatorParameterType;
-                    animatorParameter = this.wanderAnimatorParameter;
-                    animatorOnValue = this.wanderAnimatorOnValue;
-
-                    break;
-
-                case ControllerAnimationState.AINavRotateAroundLeft:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animatorParameterType = this.rotateAroundLeftAnimatorParameterType;
-                    animatorParameter = this.rotateAroundLeftAnimatorParameter;
-                    animatorOnValue = this.rotateAroundLeftAnimatorOnValue;
-
-                    break;
-
-                case ControllerAnimationState.AINavRotateAroundRight:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animatorParameterType = this.rotateAroundRightAnimatorParameterType;
-                    animatorParameter = this.rotateAroundRightAnimatorParameter;
-                    animatorOnValue = this.rotateAroundRightAnimatorOnValue;
-
-                    break;
-
-                case ControllerAnimationState.AINavMoveForward:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animatorParameterType = this.moveForwardAnimatorParameterType;
-                    animatorParameter = this.moveForwardAnimatorParameter;
-                    animatorOnValue = this.moveForwardAnimatorOnValue;
-
-                    break;
-                case ControllerAnimationState.AINavMoveBack:
-
-                    //Prevent animation from running if nav agent has been stopped
-                    if (meNavAgent != null && meNavAgent.isStopped == true)
-                        return;
-
-                    animatorParameterType = this.moveBackAnimatorParameterType;
-                    animatorParameter = this.moveBackAnimatorParameter;
-                    animatorOnValue = this.moveBackAnimatorOnValue;
-
-                    break;
-                case ControllerAnimationState.AINavFalling:
-
-                    //Prevent animation from running if not in air
-                    if (meEntity.isInTheAir == false)
-                        return;
-
-                    animatorParameterType = this.aiFallAnimatorParameterType;
-                    animatorParameter = this.aiFallAnimatorParameter;
-                    animatorOnValue = this.aiFallAnimatorOnValue;
-
-                    break;
-
-
+                
             }
 
             // if animator parameter is null or animator is not given then animation can't start so end here. 
@@ -17437,59 +15415,6 @@ namespace ABCToolkit {
                     animatorParameterType = this.crossHairOverrideAnimatorParameterType;
                     animatorParameter = this.crossHairOverrideAnimatorParameter;
                     animatorOffValue = this.crossHairOverrideAnimatorOffValue;
-
-                    break;
-                case ControllerAnimationState.AINavMoveToDestination:
-
-                    animatorParameterType = this.toDestinationAnimatorParameterType;
-                    animatorParameter = this.toDestinationAnimatorParameter;
-                    animatorOffValue = this.toDestinationAnimatorOffValue;
-
-                    break;
-
-                case ControllerAnimationState.AINavWander:
-
-                    animatorParameterType = this.wanderAnimatorParameterType;
-                    animatorParameter = this.wanderAnimatorParameter;
-                    animatorOffValue = this.wanderAnimatorOffValue;
-
-                    break;
-
-                case ControllerAnimationState.AINavRotateAroundLeft:
-
-                    animatorParameterType = this.rotateAroundLeftAnimatorParameterType;
-                    animatorParameter = this.rotateAroundLeftAnimatorParameter;
-                    animatorOffValue = this.rotateAroundLeftAnimatorOffValue;
-
-                    break;
-
-                case ControllerAnimationState.AINavRotateAroundRight:
-
-                    animatorParameterType = this.rotateAroundRightAnimatorParameterType;
-                    animatorParameter = this.rotateAroundRightAnimatorParameter;
-                    animatorOffValue = this.rotateAroundRightAnimatorOffValue;
-
-                    break;
-
-                case ControllerAnimationState.AINavMoveForward:
-
-                    animatorParameterType = this.moveForwardAnimatorParameterType;
-                    animatorParameter = this.moveForwardAnimatorParameter;
-                    animatorOffValue = this.moveForwardAnimatorOffValue;
-
-                    break;
-                case ControllerAnimationState.AINavMoveBack:
-
-                    animatorParameterType = this.moveBackAnimatorParameterType;
-                    animatorParameter = this.moveBackAnimatorParameter;
-                    animatorOffValue = this.moveBackAnimatorOffValue;
-
-                    break;
-                case ControllerAnimationState.AINavFalling:
-
-                    animatorParameterType = this.aiFallAnimatorParameterType;
-                    animatorParameter = this.aiFallAnimatorParameter;
-                    animatorOffValue = this.aiFallAnimatorOffValue;
 
                     break;
             }
@@ -17703,11 +15628,6 @@ namespace ABCToolkit {
 
 
         void OnDisable() {
-
-            //If AI navigation is enabled then clear destination and stop animations
-            if (this.navAIEnabled == true)
-                this.ClearAINavigationDestination();
-
             // turn off any indicators 
             this.ShowTargetIndicator(false);
             this.ShowSoftTargetIndicator(false);
@@ -17758,14 +15678,6 @@ namespace ABCToolkit {
             // main check press method for abilities
             this.AbilityWatcher();
 
-            //If enabled then rotate around destination
-            if (this.navAIRotateAroundDestination)
-                this.AINavigationRotateAroundDestination();
-
-            //If enabled then move away from destination
-            if (this.navAIChangeDestinationMovingAway)
-                this.AINavigationMoveAwayFromDestination();
-
 
             if (this.inIdleMode == false) {
                 // none of this will run if we are not in combat mode (sheathed)  
@@ -17806,16 +15718,6 @@ namespace ABCToolkit {
             }
 
         }
-
-        private void FixedUpdate() {
-
-            //Run the AI Nav falling handler
-            this.AINavigationFallingHandler();
-
-            //Turn to AI Navigation Destination
-            this.AINavigationTurnToDestination();
-        }
-
 
         void OnGUI() {
 
@@ -17881,41 +15783,17 @@ namespace ABCToolkit {
                 newGlobalAbility.globalAbilitiesGameTypeModification = GameTypeModification;
 
                 this.Abilities.Add(newGlobalAbility);
-            }
-
-            ///////////////// Global AI        
-            //Get all rules of ability activations linked to ability        
-            foreach (ABC_Controller.AIRule rule in GlobalElement.ElementAIRules) {
-
-                //If rule already exists then continue 
-                if (this.AIRules.Where(ai => ai.selectedAIAction == rule.selectedAIAction && ai.AIAbilityID == rule.AIAbilityID).Count() > 0)
-                    continue;
-
-                ABC_Controller.AIRule newRule = new ABC_Controller.AIRule();
-                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(rule), newRule);
-                AIRules.Add(newRule);
-            }
-
+            }       
 
             //If game is running then initialise component and equip any weapons or scroll abilities set in parameters
             if (Application.isPlaying) {
                 yield return this.InitialiseComponent(true, EquipWeapon ? GlobalElement.ElementWeapon.weaponID : -1);
             }
 
-
-
             yield break;
 
         }
 
-
-
-
-
         #endregion
-
-
-
-
     }
 }

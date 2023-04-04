@@ -108,7 +108,7 @@ namespace ABCToolkit {
                 contEditor.globElement = this.globElement;
                 abilityEditor.globElement = this.globElement;
                 abilityEditor.Setup(meAbilityList);
-                contEditor.SetupAIRules(meAIRuleList);
+                
                 contEditor.SetupAllAbilities();
 
             }
@@ -154,7 +154,7 @@ namespace ABCToolkit {
                     GUI.contentColor = Color.white;
                 } else {
                     GUI.backgroundColor = inspectorBackgroundColor;
-                    GUI.contentColor = Color.black;
+                    GUI.contentColor = Color.white;
                 }
 
 
@@ -181,7 +181,7 @@ namespace ABCToolkit {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.Space();
                 EditorGUILayout.BeginVertical(GUILayout.MaxWidth(170));
-                contEditor.GetAIRuleSelectList();
+
                 EditorGUILayout.EndVertical();
                 InspectorBoldVerticleLine();
 
@@ -194,14 +194,13 @@ namespace ABCToolkit {
                     GUI.contentColor = Color.white;
                 } else {
                     GUI.backgroundColor = inspectorBackgroundColor;
-                    GUI.contentColor = Color.black;
+                    GUI.contentColor = Color.white;
                 }
 
 
                 EditorGUILayout.BeginVertical();
                 EditorGUILayout.Space();
 
-                contEditor.GetAIRuleSettings();
                 EditorGUILayout.EndVertical();
 
                 EditorGUILayout.EndScrollView();
@@ -224,7 +223,7 @@ namespace ABCToolkit {
                     GUI.contentColor = Color.white;
                 } else {
                     GUI.backgroundColor = inspectorBackgroundColor;
-                    GUI.contentColor = Color.black;
+                    GUI.contentColor = Color.white;
                 }
 
                 EditorGUILayout.Space();

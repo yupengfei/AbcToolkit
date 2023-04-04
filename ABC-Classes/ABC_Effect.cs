@@ -80,12 +80,6 @@ namespace ABCToolkit {
             }
 
             /// <summary>
-            /// The integration type for stat functionality - if ABC is picked then normal functionality is used
-            /// else stats from another integration system i.e game creator is used
-            /// </summary>
-            public ABCIntegrationType statIntegrationType;
-
-            /// <summary>
             /// The operator used in changing the potency (Add, Subtract, Divide, Multiply)
             /// </summary>
             public ArithmeticOperators arithmeticOperator;
@@ -1037,11 +1031,6 @@ namespace ABCToolkit {
                                 // AltMiscProperty: (Boolean) enable (true) or disable (false) component
                                 entity.ToggleComponent(this.miscellaneousProperty, bool.Parse(this.miscellaneousAltProperty));
                                 break;
-                            case "ToggleAI":
-                                // Effect: will enable/disable ability AI
-                                // MiscProperty: (Boolean) if true then ability AI will be enabled, else disabled
-                                entity.ToggleAI(bool.Parse(this.miscellaneousProperty));
-                                break;
                             case "TriggerAbility":
                                 // Effect: will trigger the ability
                                 // Potency: AbilityID to activate
@@ -1271,44 +1260,9 @@ namespace ABCToolkit {
                                 // Misc Property: If true then softtarget will be used as the current target, if a current target doesn't exist
                                 entity.TeleportRandomSideCurrentTarget(potencyValue, bool.Parse(this.miscellaneousProperty));
                                 break;
-                            case "AdjustGCStatValue":
-                                // Effect: (GC Integration) Will modify a Game Creator stats value by the amount provided
-                                // PotencyValue: Amount to change stat by (can be positive or negative)
-                                // MiscProperty: Name of stat to change
-                                entity.AdjustGCStatValue(this.miscellaneousProperty, potencyValue, GCStatType.Stat);
-                                break;
-                            case "AdjustGCAttributeValue":
-                                // Effect: (GC Integration) Will modify a Game Creator stats attribute by the amount provided
-                                // PotencyValue: Amount to change attribute by (can be positive or negative)
-                                // MiscProperty: Name of attribute to change
-                                entity.AdjustGCStatValue(this.miscellaneousProperty, potencyValue, GCStatType.Attribute);
-                                break;
-                            case "AddGCStatusEffect":
-                                // Effect: (GC Integration) Will add a Game Creator status effect matching the status effect name/ID provided
-                                // MiscProperty: Name of status effect to remove
-                                entity.AddGCStatusEffect(this.miscellaneousProperty);
-                                break;
-                            case "RemoveGCStatusEffect":
-                                // Effect: (GC Integration) Will remove a Game Creator status effect matching the status effect name/ID provided
-                                // MiscProperty: Name of status effect to remove
-                                entity.RemoveGCStatusEffect(this.miscellaneousProperty);
-                                break;
                             case "GCAbilityCollisionTrigger":
                                 // Effect: (GC Integration) Will set off the ABCAbilityCollision trigger on GC
                                 // MiscProperty: (Optional) ABCAbilityCollision GC triggers can define to only be triggered by this effect if this effect misc property matches the misc property value on the GC trigger 
-                                break;
-                            case "AdjustGC2StatValue":
-                                // Effect: (GC Integration) Will modify a Game Creator stats value by the amount provided
-                                // PotencyValue: Amount to change stat by (can be positive or negative)
-                                // MiscProperty: Name of stat to change
-                                // AltMiscProperty: (Boolean) If true then stat value will have a modifier applied, else if false base value will change
-                                entity.AdjustGC2StatValue(this.miscellaneousProperty, potencyValue, GCStatType.Stat, bool.Parse(this.miscellaneousAltProperty));
-                                break;
-                            case "AdjustGC2AttributeValue":
-                                // Effect: (GC Integration) Will modify a Game Creator stats attribute by the amount provided
-                                // PotencyValue: Amount to change attribute by (can be positive or negative)
-                                // MiscProperty: Name of attribute to change
-                                entity.AdjustGC2StatValue(this.miscellaneousProperty, potencyValue, GCStatType.Attribute);
                                 break;
                             case "AdjustGlobalAbilityMissChance":
                                 // Effect: Will adjust the global ability miss chance by by the value provided 
@@ -1413,17 +1367,6 @@ namespace ABCToolkit {
                                 // Effect: will enable/disable prevent projectile effects status
                                 // MiscProperty: (Boolean) True to enable the prevention of projectile effects, else false to allow projectile effects
                                 entity.TogglePreventProjectileAndRayCastEffects(bool.Parse(this.miscellaneousProperty));
-                                break;
-                            case "EmeraldAIDamage":
-                                // Effect: will damage the entity using Emerald AI (Call damage method in Emerald AI)
-                                // PotencyValue: Amount of damage to apply
-                                // MiscProperty: (Boolean) True if target type is player, else false for AI
-
-                                //If misc field has not been field out then default to true
-                                if (this.miscellaneousProperty == string.Empty)
-                                    this.miscellaneousProperty = "True";
-
-                                entity.ActivateEmeraldAIDamage((int)potencyValue, Originator, bool.Parse(this.miscellaneousProperty));
                                 break;
                             case "AddNextEffectHere":
                                 //Note to user, example of how to add new effects
@@ -1652,11 +1595,6 @@ namespace ABCToolkit {
                             // AltMiscProperty: (Boolean) enable (true) or disable (false) component
                             entity.ToggleComponent(this.miscellaneousProperty, ReverseBoolean(bool.Parse(this.miscellaneousAltProperty)));
                             break;
-                        case "ToggleAI":
-                            // Effect: will enable/disable ability AI
-                            // MiscProperty: (Boolean) if true then ability AI will be enabled, else disabled
-                            entity.ToggleAI(this.ReverseBoolean(bool.Parse(this.miscellaneousProperty)));
-                            break;
                         case "EnableAbility":
                             // Effect: will enable an ability
                             // MiscProperty: ID of the ability to enable
@@ -1683,40 +1621,6 @@ namespace ABCToolkit {
                             // Effect: will enable/disable renderer making entity invisible
                             // MiscProperty: False to enable invisibility, else false to make entity visible
                             entity.ToggleVisibility(this.ReverseBoolean(bool.Parse(this.miscellaneousProperty)));
-                            break;
-                        case "AdjustGCStatValue":
-                            // Effect: (GC Integration) Will modify a Game Creator stats value by the amount provided
-                            // PotencyValue: Amount to change stat by (can be positive or negative)
-                            // MiscProperty: Name of stat to change
-                            entity.AdjustGCStatValue(this.miscellaneousProperty, this.ReverseValue(potencyValue), GCStatType.Stat);
-                            break;
-                        case "AdjustGCAttributeValue":
-                            // Effect: (GC Integration) Will modify a Game Creator attribute value by the amount provided
-                            // PotencyValue: Amount to change attribute by (can be positive or negative)
-                            // MiscProperty: Name of attribute to change
-                            entity.AdjustGCStatValue(this.miscellaneousProperty, this.ReverseValue(potencyValue), GCStatType.Attribute);
-                            break;
-                        case "AddGCStatusEffect":
-                            // Effect: (GC Integration) Will add a Game Creator status effect matching the status effect name/ID provided
-                            // MiscProperty: Name of status effect to remove
-                            entity.RemoveGCStatusEffect(this.miscellaneousProperty);
-                            break;
-                        case "RemoveGCStatusEffect":
-                            // Effect: (GC Integration) Will remove a Game Creator status effect matching the status effect name/ID provided
-                            // MiscProperty: Name of status effect to remove
-                            entity.AddGCStatusEffect(this.miscellaneousProperty);
-                            break;
-                        case "AdjustGC2StatValue":
-                            // Effect: (GC 2 Integration) Will modify a Game Creator stats value by the amount provided
-                            // PotencyValue: Amount to change stat by (can be positive or negative)
-                            // MiscProperty: Name of stat to change
-                            entity.AdjustGC2StatValue(this.miscellaneousProperty, this.ReverseValue(potencyValue), GCStatType.Stat, true);
-                            break;
-                        case "AdjustGC2AttributeValue":
-                            // Effect: (GC 2 Integration) Will modify a Game Creator stats attribute by the amount provided
-                            // PotencyValue: Amount to change attribute by (can be positive or negative)
-                            // MiscProperty: Name of attribute to change
-                            entity.AdjustGC2StatValue(this.miscellaneousProperty, this.ReverseValue(potencyValue), GCStatType.Attribute);
                             break;
                         case "AdjustGlobalAbilityMissChance":
                             // Effect: Will adjust the global ability miss chance by by the value provided 
@@ -2019,17 +1923,17 @@ namespace ABCToolkit {
 
                     switch (statMod.statSource) {
                         case ActivateOn.Entity:
-                            statModification += statMod.percentageValue / 100 * Target.GetStatValue(statMod.statName, statMod.statIntegrationType);
+                            statModification += statMod.percentageValue / 100 * Target.GetStatValue(statMod.statName);
                             break;
                         case ActivateOn.Originator:
-                            statModification += statMod.percentageValue / 100 * Originator.GetStatValue(statMod.statName, statMod.statIntegrationType);
+                            statModification += statMod.percentageValue / 100 * Originator.GetStatValue(statMod.statName);
                             break;
                         case ActivateOn.BothSimultaneously:
                             //Add both target and originator if they are not the same object
-                            statModification += statMod.percentageValue / 100 * Originator.GetStatValue(statMod.statName, statMod.statIntegrationType);
+                            statModification += statMod.percentageValue / 100 * Originator.GetStatValue(statMod.statName);
 
                             if (Target.gameObject != Originator.gameObject)
-                                statModification += statMod.percentageValue / 100 * Target.GetStatValue(statMod.statName, statMod.statIntegrationType);
+                                statModification += statMod.percentageValue / 100 * Target.GetStatValue(statMod.statName);
 
                             break;
                     }

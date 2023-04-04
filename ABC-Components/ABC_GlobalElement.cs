@@ -64,11 +64,6 @@ namespace ABCToolkit {
 		public List<ABC_Ability> ElementAbilities = new List<ABC_Ability>();
 
 		/// <summary>
-		/// AI rules attached to this element
-		/// </summary>
-		public List<ABC_Controller.AIRule> ElementAIRules = new List<ABC_Controller.AIRule>();
-
-		/// <summary>
 		/// effects attached to this element
 		/// </summary>
 		public List<Effect> ElementEffects = new List<Effect>();

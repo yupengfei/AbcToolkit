@@ -539,17 +539,6 @@ namespace ABCToolkit {
 
             }
 
-            //record any AI that already existed
-            List<ABC_Controller.AIRule> aiImport = new List<ABC_Controller.AIRule>();
-
-            foreach (ABC_Controller.AIRule ai in abcManager.AIRules) {
-
-                ABC_Controller.AIRule newAI = new ABC_Controller.AIRule();
-                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(ai), newAI);
-                aiImport.Add(newAI);
-
-            }
-
 
             //Overwrite ABC manager with the defaults from global portal 
             JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(globalPortal.ComponentPreset.GetComponent<ABC_Controller>()), abcManager);
@@ -571,9 +560,6 @@ namespace ABCToolkit {
             if (uiImport.Count > 0)
                 abcManager.IconUIs.AddRange(uiImport);
 
-            //reImport any AI that already existed
-            if (aiImport.Count > 0)
-                abcManager.AIRules.AddRange(aiImport);
 
 
             //add tag conversions
@@ -1928,7 +1914,7 @@ namespace ABCToolkit {
                     GUI.contentColor = Color.white;
                 } else {
                     GUI.backgroundColor = inspectorBackgroundColor;
-                    GUI.contentColor = Color.black;
+                    GUI.contentColor = Color.white;
                 }
 
 

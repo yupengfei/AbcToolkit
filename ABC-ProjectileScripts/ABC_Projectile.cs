@@ -532,11 +532,11 @@ namespace ABCToolkit {
 
             //Reduce any stat cost
             if (ability.statCost > 0)
-                originator.AdjustStatValue(ability.statCostName, -ability.statCost, ability.statCostIntegrationType, GCStatType.Attribute);
+                originator.AdjustStatValue(ability.statCostName, -ability.statCost);
 
 
             // if mana is zero then destroy this ability
-            if (originator.manaValue <= 0 || ability.statCost > 0 && originator.GetStatValue(ability.statCostName, ability.statCostIntegrationType, GCStatType.Attribute) <= 0)
+            if (originator.manaValue <= 0 || ability.statCost > 0 && originator.GetStatValue(ability.statCostName) <= 0)
                 StartCoroutine(DestroyProjectile(ability.destroyDelay));
 
 

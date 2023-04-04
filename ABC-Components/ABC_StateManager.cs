@@ -1099,26 +1099,10 @@ namespace ABCToolkit {
         /// </summary>
         public float currentMaxHealth {
             get {
-
-                if (this.healthIntergrationType == ABCIntegrationType.GameCreator)
-                    return meEntity.GetGCMaxAttributeValue(this.gcHealthID);
-                else if (this.healthIntergrationType == ABCIntegrationType.GameCreator2)
-                    return meEntity.GetGC2MaxAttributeValue(this.gcHealthID);
-                else if (this.healthIntergrationType == ABCIntegrationType.EmeraldAI)
-                    return meEntity.GetEmeraldAIMaxHealth();
-                else
-                    return this.maxHealth;
+                return this.maxHealth;
             }
             set {
-
-                if (this.healthIntergrationType == ABCIntegrationType.GameCreator)
-                    meEntity.SetGCStatValue(this.gcHealthID, value, GCStatType.Attribute);
-                else if (this.healthIntergrationType == ABCIntegrationType.GameCreator2)
-                    meEntity.SetGC2StatValue(this.gcHealthID, value, GCStatType.Attribute);
-                else if (this.healthIntergrationType == ABCIntegrationType.EmeraldAI)
-                    meEntity.SetEmeraldMaxHealth((int)value);
-                else
-                    this.maxHealth = value;
+                this.maxHealth = value;
             }
         }
 
@@ -1134,37 +1118,13 @@ namespace ABCToolkit {
         /// </summary>
         public float currentHealth {
             get {
-
-                if (this.healthIntergrationType == ABCIntegrationType.GameCreator)
-                    return meEntity.GetGCStatValue(this.gcHealthID, GCStatType.Attribute);
-                if (this.healthIntergrationType == ABCIntegrationType.GameCreator2)
-                    return meEntity.GetGC2StatValue(this.gcHealthID, GCStatType.Attribute);
-                else if (this.healthIntergrationType == ABCIntegrationType.EmeraldAI)
-                    return meEntity.GetEmeraldAICurrentHealth();
-                else
-                    return this.healthABC;
+                return this.healthABC;
             }
             set {
-                if (this.healthIntergrationType == ABCIntegrationType.GameCreator)
-                    meEntity.SetGCStatValue(this.gcHealthID, value, GCStatType.Attribute);
-                else if (this.healthIntergrationType == ABCIntegrationType.GameCreator2)
-                    meEntity.SetGC2StatValue(this.gcHealthID, value, GCStatType.Attribute);
-                else if (this.healthIntergrationType == ABCIntegrationType.EmeraldAI)
-                    meEntity.SetEmeraldAICurrentHealth((int)value);
-                else
-                    this.healthABC = value;
+                this.healthABC = value;
             }
         }
 
-
-
-
-
-        /// <summary>
-        /// The integration type for health functionality - if ABC is picked then normal functionality is used
-        /// else health from another integration system i.e game creator is used
-        /// </summary>
-        public ABCIntegrationType healthIntergrationType = ABCIntegrationType.ABC;
 
         /// <summary>
         /// Game Creator Integration: The ID of the GC stat/attribute which represents health 
@@ -1853,8 +1813,6 @@ namespace ABCToolkit {
         /// <param name="Ability">(Optional) Ability with all the additional settings</param>
         public IEnumerator AddEffects(string AbilityName, List<Effect> effects, ABC_IEntity AfflictingOriginator, AbilityType AbilityType, bool IsEffectLink, GameObject Projectile = null, GameObject ObjectHit = null, Vector3 AbilityHitPoint = default(Vector3), bool ActivateAnimationFromHit = true, float ActivateAnimationFromHitDelay = 0f, AnimationClip ActivateAnimationFromHitClip = null, string SpecificAnimationToActivate = "", bool OverrideWeaponBlocking = false, bool ReduceWeaponBlockDurability = true, bool OverrideWeaponParrying = false, float PushAmount = 0f, float LiftAmount = 0f, float PushDelay = 0f, ABC_Ability Ability = null) {
 
-            //Let AI know that we just hit them so they should be aware of us
-            meEntity.AINavigationAlert(AfflictingOriginator);
 
             // if effect protection is on then end here
             if (this.effectProtection == true)
@@ -2204,16 +2162,7 @@ namespace ABCToolkit {
         /// <param name="IntegrationType">The integration type for stat functionality - if ABC is picked then normal stat functionality is used else stat from another integration system i.e game creator is used</param>>
         /// <param name="GCStatType">The type of GC stat to adjust: Stat or Attribute</param>
         /// <returns>Value of the stat</returns>
-        public float GetStatValue(string StatName, ABCIntegrationType IntegrationType = ABCIntegrationType.ABC, GCStatType GCStatType = GCStatType.Stat) {
-
-            //If integrating with GameCreator then retrieve stat from that Asset
-            if (IntegrationType == ABCIntegrationType.GameCreator)
-                return meEntity.GetGCStatValue(StatName, GCStatType);
-
-            //If integrating with GameCreator 2 then retrieve stat from that Asset
-            if (IntegrationType == ABCIntegrationType.GameCreator2)
-                return meEntity.GetGC2StatValue(StatName, GCStatType);
-
+        public float GetStatValue(string StatName) {
             //else get stat from ABC
             EntityStat entityStat = this.EntityStatList.Where(stat => stat.statName == StatName).FirstOrDefault();
 
@@ -2232,30 +2181,11 @@ namespace ABCToolkit {
         /// <param name="Value">Amount to set value too</param>
         /// <param name="IntegrationType">The integration type for stat functionality - if ABC is picked then normal stat functionality is used else stat from another integration system i.e game creator is used</param>>
         /// <param name="GCStatType">The type of GC stat to adjust: Stat or Attribute</param>
-        public void SetStatValue(string StatName, float Value, ABCIntegrationType IntegrationType = ABCIntegrationType.ABC, GCStatType GCStatType = GCStatType.Stat) {
+        public void SetStatValue(string StatName, float Value) {
+            EntityStat entityStat = this.EntityStatList.Where(stat => stat.statName == StatName).FirstOrDefault();
 
-            switch (IntegrationType) {
-                case ABCIntegrationType.ABC:
-
-                    EntityStat entityStat = this.EntityStatList.Where(stat => stat.statName == StatName).FirstOrDefault();
-
-                    if (entityStat != null)
-                        entityStat.SetValue(Value);
-
-                    break;
-                case ABCIntegrationType.GameCreator:
-
-                    this.meEntity.SetGCStatValue(StatName, Value, GCStatType);
-
-                    break;
-                case ABCIntegrationType.GameCreator2:
-
-                    this.meEntity.SetGC2StatValue(StatName, Value, GCStatType);
-
-                    break;
-            }
-
-
+            if (entityStat != null)
+                entityStat.SetValue(Value);
         }
 
         /// <summary>
@@ -2265,30 +2195,10 @@ namespace ABCToolkit {
         /// <param name="Amount">Amount to increase or decrease the stat value by</param>
         /// <param name="IntegrationType">The integration type for stat functionality - if ABC is picked then normal stat functionality is used else stat from another integration system i.e game creator is used</param>>
         /// <param name="GCStatType">The type of GC stat to adjust: Stat or Attribute</param>
-        public void AdjustStatValue(string StatName, float Amount, ABCIntegrationType IntegrationType = ABCIntegrationType.ABC, GCStatType GCStatType = GCStatType.Stat) {
-
-
-            switch (IntegrationType) {
-                case ABCIntegrationType.ABC:
-
-                    EntityStat entityStat = this.EntityStatList.Where(stat => stat.statName == StatName).FirstOrDefault();
-
-                    if (entityStat != null)
-                        entityStat.AdjustValue(Amount);
-
-                    break;
-                case ABCIntegrationType.GameCreator:
-
-                    this.meEntity.AdjustGCStatValue(StatName, Amount, GCStatType);
-
-                    break;
-                case ABCIntegrationType.GameCreator2:
-
-                    this.meEntity.AdjustGC2StatValue(StatName, Amount, GCStatType);
-
-                    break;
-            }
-
+        public void AdjustStatValue(string StatName, float Amount) {
+            EntityStat entityStat = this.EntityStatList.Where(stat => stat.statName == StatName).FirstOrDefault();
+            if (entityStat != null)
+                entityStat.AdjustValue(Amount);
         }
 
 
@@ -2499,10 +2409,6 @@ namespace ABCToolkit {
             //If set then stop movement for a second due to zero health
             if (this.stopMovementOnZeroHealth)
                 StartCoroutine(meEntity.StopMovementForDuration(0.5f, true, this.stopMovementOnZeroHealthFreezePosition, stopMovementOnZeroHealthDisableComponents));
-
-            //Stop AI Nav
-            meEntity.ClearAINavigation();
-
 
             //If zerohealth was already reached then end here but make sure death animation is still playing
             if (entityZeroHealthReached == true) {

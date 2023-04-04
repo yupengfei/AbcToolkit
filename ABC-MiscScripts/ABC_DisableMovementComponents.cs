@@ -90,12 +90,6 @@ namespace ABCToolkit {
         /// </summary>
         private ABC_MovementController abcMovementController;
 
-#if ABC_GC_2_Integration
-    /// <summary>
-    /// Stores the GC2 current angular speed
-    /// </summary>
-    private float gc2CurrentAngularSpeed = 3000;
-#endif
 
 
         #endregion
@@ -164,21 +158,6 @@ namespace ABCToolkit {
 
         }
 
-        /// <summary>
-        /// Will enable or disable the AI Navigation block for the entity, if blocked then the navigation will not run
-        /// </summary>
-        /// <param name="Enabled">True if to block AI Navigation, else false</param>
-        private void BlockABCAINav(bool Enabled) {
-
-            if (this.abcEntity == null || this.blockABCAINavigation == false)
-                return;
-
-
-            this.abcEntity.BlockAINavigation(Enabled);
-
-
-        }
-
 
         /// <summary>
         /// Will enable/disable the Character Controller 
@@ -189,22 +168,6 @@ namespace ABCToolkit {
             //If not disabling character controller then end here
             if (this.disableCharacterController == false)
                 return;
-
-#if ABC_GC_2_Integration
-
-        if (this.abcEntity.HasGC2CharacterComponent()) {
-
-            //Set rotation
-            ABC_Utilities.mbSurrogate.StartCoroutine(this.abcEntity.AllowGC2Rotation(Time.time, Enabled, 0f));
-
-            //Set GC2 Character is controllerable
-            ABC_Utilities.mbSurrogate.StartCoroutine(this.abcEntity.SetGC2CharacterIsControllerable(Time.time, Enabled));
-
-            return; 
-
-        }
-#endif
-
             //If char controller doesn't exist or ABC movement controller is in use then end here (ABC movement controller stops on it's own using events)
             if (this.charController == null || this.abcMovementController != null)
                 return;
@@ -241,9 +204,6 @@ namespace ABCToolkit {
 
             //Disable all components
             this.ToggleCharacterController(false);
-
-            //Block ABC AI Nav
-            this.BlockABCAINav(true);
         }
 
         // Update is called once per frame
@@ -270,9 +230,6 @@ namespace ABCToolkit {
 
             //Enable all components again        
             this.ToggleCharacterController(true);
-
-            //Unblock ABC AI Nav
-            this.BlockABCAINav(false);
 
             //enable navagent again unless entity is in air
             if (this.navAgent != null && this.EntityInAir() == false) {

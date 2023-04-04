@@ -516,7 +516,7 @@ namespace ABCToolkit {
                     GUI.contentColor = Color.white;
                 } else {
                     GUI.backgroundColor = inspectorBackgroundColor;
-                    GUI.contentColor = Color.black;
+                    GUI.contentColor = Color.white;
                 }
 
 

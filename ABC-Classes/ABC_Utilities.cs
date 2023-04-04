@@ -279,7 +279,6 @@ namespace ABCToolkit {
             //refresh all parts of the global elements
             foreach (ABC_GlobalElement globalElement in (Resources.FindObjectsOfTypeAll(typeof(ABC_GlobalElement)) as ABC_GlobalElement[]).Select(c => c).ToList()) {
                 InvokeMethodOnAllProperties(globalElement.ElementAbilities, "RefreshCustomReference");
-                InvokeMethodOnAllProperties(globalElement.ElementAIRules, "RefreshCustomReference");
                 InvokeMethodOnAllProperties(globalElement.ElementEffects, "RefreshCustomReference");
                 InvokeMethodOnAllProperties(globalElement.ElementWeapon, "RefreshCustomReference");
                 InvokeMethodOnAllProperties(globalElement.elementIcon, "RefreshCustomReference");
@@ -1444,21 +1443,6 @@ namespace ABCToolkit {
         None
     }
 
-
-    //integrations 
-
-    public enum ABCIntegrationType {
-        ABC = 0,
-        GameCreator = 1,
-        EmeraldAI = 2,
-        GameCreator2
-    }
-
-    //Game Creator Integration
-    public enum GCStatType {
-        Stat = 1,
-        Attribute = 2
-    }
 
     #endregion
 }

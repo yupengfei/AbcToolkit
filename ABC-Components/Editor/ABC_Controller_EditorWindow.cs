@@ -757,7 +757,7 @@ namespace ABCToolkit {
                 GUI.contentColor = Color.white;
             } else {
                 GUI.backgroundColor = inspectorBackgroundColor;
-                GUI.contentColor = Color.black;
+                GUI.contentColor = Color.white;
             }
 
 
@@ -792,7 +792,7 @@ namespace ABCToolkit {
                     GUI.contentColor = Color.white;
                 } else {
                     GUI.backgroundColor = inspectorBackgroundColor;
-                    GUI.contentColor = Color.black;
+                    GUI.contentColor = Color.white;
                 }
 
 
@@ -4173,665 +4173,6 @@ namespace ABCToolkit {
 
         int aiRuleListChoice = 0;
 
-        int currentAIRule {
-            get {
-
-                if (abilityCont != null)
-                    return abilityCont.CurrentAI;
-                else
-                    return this.aiRuleListChoice;
-            }
-            set {
-
-                if (abilityCont != null)
-                    abilityCont.CurrentAI = value;
-                else
-                    aiRuleListChoice = value;
-
-
-            }
-        }
-
-        public void SetupAIRules(SerializedProperty AIRules = null) {
-
-
-            // Create reorderable list to the side 
-            IList aiRulelist = null;
-
-            //If we have controller then setup abilities 
-            if (abilityCont != null) {
-
-                meAIRule = GetTarget.FindProperty("AIRules"); // list of AI Rules
-                aiRulelist = abilityCont.AIRules;
-
-            } else if (AIRules != null) {
-                meAIRule = AIRules;
-                aiRulelist = globElement.ElementAIRules;
-            }
-
-
-
-
-            // reorderable list for abilities
-            reorderableListAIRules = new ReorderableList(aiRulelist,
-                                                         typeof(ABC_Controller.AIRule),
-                                                         true, false, false, false);
-
-            // name the header
-            reorderableListAIRules.drawHeaderCallback = (Rect rect) => {
-                EditorGUI.LabelField(rect, "List Of AI Rules");
-            };
-
-
-            // when the + sign is called it will add a new ability
-            reorderableListAIRules.onAddCallback = (ReorderableList l) => {
-                // add standard defaults here
-                abilityCont.AIRules.Add(new ABC_Controller.AIRule());
-            };
-
-
-            // when we select any of the list then it will set the current ability to show the ability details ready to be changed
-            reorderableListAIRules.onSelectCallback = (ReorderableList l) => {
-                currentAIRule = l.index;
-
-            };
-
-            reorderableListAIRules.onReorderCallback = (ReorderableList l) => {
-
-                //get current ability
-                ABC_Controller.AIRule movedElement = abilityCont.AIRules[abilityCont.CurrentAI];
-                //insert it back to l.index where the element was dragged to in the list
-                abilityCont.AIRules.Insert(l.index, movedElement);
-                //remove current ability
-                abilityCont.AIRules.Remove(movedElement);
-
-
-                EditorUtility.SetDirty(abilityCont);
-
-            };
-
-
-
-            // design of the reorderable list 
-            reorderableListAIRules.drawElementCallback =
-            (Rect rect, int index, bool isActive, bool isFocused) => {
-                if (index < meAIRule.arraySize) {
-                    SerializedProperty MyListRef = meAIRule.GetArrayElementAtIndex(index);
-                    SerializedProperty ruleName = MyListRef.FindPropertyRelative("RuleName");
-
-                    string name = ruleName.stringValue;
-
-                    rect.y += 2;
-
-                    EditorGUI.PrefixLabel(
-                        new Rect(rect.x, rect.y, 30, EditorGUIUtility.singleLineHeight),
-                        1, new GUIContent(name));
-                }
-            };
-
-
-        }
-
-        public void GetAIRuleSelectList() {
-
-
-            #region AI Rule Selection List
-
-
-
-            InspectorHeader("Rule List", false);
-            InspectorHelpBox("Select an AI rule below to configure it. After the intermission if all conditions are met then the ability will fire.", false);
-
-            if (EditorGUIUtility.isProSkin) {
-                GUI.color = inspectorSectionBoxProColor;
-            } else {
-                GUI.color = inspectorSectionBoxColor;
-            }
-
-            EditorGUILayout.BeginVertical("Box", GUILayout.ExpandHeight(true));
-
-            GUI.color = Color.white;
-
-            listScrollPos = EditorGUILayout.BeginScrollView(listScrollPos,
-                                                             false,
-                                                             false);
-
-
-
-            reorderableListAIRules.DoLayoutList();
-            EditorGUILayout.EndScrollView();
-
-            EditorGUILayout.EndVertical();
-            #endregion
-
-            #region Selected AI Rule Controls
-
-            //InspectorHeader("Ability Controls");
-
-            if (EditorGUIUtility.isProSkin) {
-                GUI.color = inspectorSectionBoxProColor;
-            } else {
-                GUI.color = inspectorSectionBoxColor;
-            }
-
-            EditorGUILayout.BeginVertical("Box");
-
-            GUI.color = Color.white;
-
-            EditorGUILayout.Space();
-            if (GUILayout.Button(new GUIContent(" Add New AI Rule", AddIcon, "Add New AI Rule"))) {
-
-
-                if (abilityCont != null) {
-                    EditorUtility.SetDirty(abilityCont);
-                    // add standard defaults here
-                    abilityCont.AIRules.Add(new ABC_Controller.AIRule());
-                } else {
-                    EditorUtility.SetDirty(globElement);
-                    globElement.ElementAIRules.Add(new ABC_Controller.AIRule());
-                }
-
-
-
-            }
-
-
-            if (GUILayout.Button(new GUIContent(" Copy Selected Rule", CopyIcon, "Copy Selected Rule"))) {
-
-                ABC_Controller.AIRule clone = new ABC_Controller.AIRule();
-
-                if (abilityCont != null) {
-                    clone = abilityCont.AIRules[currentAIRule];
-                } else {
-                    clone = globElement.ElementAIRules[currentAIRule];
-                }
-
-
-                ABC_Controller.AIRule newAI = new ABC_Controller.AIRule();
-
-                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(clone), newAI);
-
-                newAI.RuleName = "Copy Of " + newAI.RuleName;
-
-
-
-                if (abilityCont != null) {
-                    EditorUtility.SetDirty(abilityCont);
-                    // add standard defaults here
-                    abilityCont.AIRules.Add(newAI);
-                } else {
-                    EditorUtility.SetDirty(globElement);
-                    globElement.ElementAIRules.Add(newAI);
-                }
-
-
-            }
-
-
-            string ruleName = "";
-
-            if (abilityCont != null && abilityCont.AIRules.Count > 0) {
-                ruleName = abilityCont.AIRules[currentAIRule].RuleName;
-            } else if (abilityCont == null && globElement.ElementAIRules.Count > 0) {
-                ruleName = globElement.ElementAIRules[currentAIRule].RuleName;
-            }
-
-            //Delete Rule 
-            if (GUILayout.Button(new GUIContent(" Delete Selected Rule", RemoveIcon, "Delete Selected Rule")) && EditorUtility.DisplayDialog("Delete AI Rule?", "Are you sure you want to delete " + ruleName, "Yes", "No")) {
-
-                int removeAtPosition = currentAIRule;
-                currentAIRule = 0;
-
-                if (abilityCont != null) {
-                    EditorUtility.SetDirty(abilityCont);
-                    // add standard defaults here
-                    abilityCont.AIRules.RemoveAt(removeAtPosition);
-                } else {
-                    EditorUtility.SetDirty(globElement);
-                    globElement.ElementAIRules.RemoveAt(removeAtPosition);
-                }
-
-            }
-
-            EditorGUILayout.Space();
-            EditorGUILayout.EndVertical();
-            EditorGUILayout.Space();
-            #endregion
-
-        }
-
-        public void GetAIRuleSettings() {
-
-            #region Properties
-
-            if (meAIRule.arraySize == 0)
-                return;
-
-            // display details for that spell        
-            SerializedProperty MyAIRuleListRef = meAIRule.GetArrayElementAtIndex(currentAIRule);
-
-
-            SerializedProperty RuleName = MyAIRuleListRef.FindPropertyRelative("RuleName");
-            SerializedProperty AIActive = MyAIRuleListRef.FindPropertyRelative("AIActive");
-
-            SerializedProperty AIEnableRuleCooldown = MyAIRuleListRef.FindPropertyRelative("AIEnableRuleCooldown");
-            SerializedProperty AIRuleCooldownMinValue = MyAIRuleListRef.FindPropertyRelative("AIRuleCooldownMinValue");
-            SerializedProperty AIRuleCooldownMaxValue = MyAIRuleListRef.FindPropertyRelative("AIRuleCooldownMaxValue");
-
-            SerializedProperty selectedAIAction = MyAIRuleListRef.FindPropertyRelative("selectedAIAction");
-            SerializedProperty AIAbilityID = MyAIRuleListRef.FindPropertyRelative("AIAbilityID");
-            SerializedProperty AIAbilityListChoice = MyAIRuleListRef.FindPropertyRelative("AIAbilityListChoice");
-            SerializedProperty AIActivateAbilityGroupIDs = MyAIRuleListRef.FindPropertyRelative("AIActivateAbilityGroupIDs");
-            SerializedProperty AIActivateGroupListChoice = MyAIRuleListRef.FindPropertyRelative("AIActivateGroupListChoice");
-            SerializedProperty AIWeaponID = MyAIRuleListRef.FindPropertyRelative("AIWeaponID");
-            SerializedProperty AIWeaponListChoice = MyAIRuleListRef.FindPropertyRelative("AIWeaponListChoice");
-
-            SerializedProperty AIBlockDurationMin = MyAIRuleListRef.FindPropertyRelative("AIBlockDurationMin");
-            SerializedProperty AIBlockDurationMax = MyAIRuleListRef.FindPropertyRelative("AIBlockDurationMax");
-
-            SerializedProperty probabilityMinValue = MyAIRuleListRef.FindPropertyRelative("probabilityMinValue");
-            SerializedProperty probabilityMaxValue = MyAIRuleListRef.FindPropertyRelative("probabilityMaxValue");
-
-
-            SerializedProperty AITargets = MyAIRuleListRef.FindPropertyRelative("AITargets");
-            SerializedProperty AITags = MyAIRuleListRef.FindPropertyRelative("AITags");
-
-            SerializedProperty AIRangeMax = MyAIRuleListRef.FindPropertyRelative("AIRangeMax");
-            SerializedProperty AIRangeMin = MyAIRuleListRef.FindPropertyRelative("AIRangeMin");
-
-
-            SerializedProperty updateTarget = MyAIRuleListRef.FindPropertyRelative("updateTarget");
-            SerializedProperty ignoreCaster = MyAIRuleListRef.FindPropertyRelative("ignoreCaster");
-            SerializedProperty castWithoutConditions = MyAIRuleListRef.FindPropertyRelative("castWithoutConditions");
-            SerializedProperty activateWithoutTarget = MyAIRuleListRef.FindPropertyRelative("activateWithoutTarget");
-            SerializedProperty bypassTargetLimitations = MyAIRuleListRef.FindPropertyRelative("bypassTargetLimitations");
-
-            SerializedProperty stateEffectConditions = MyAIRuleListRef.FindPropertyRelative("stateEffectConditions");
-            SerializedProperty stateEffectAbsentConditions = MyAIRuleListRef.FindPropertyRelative("stateEffectAbsentConditions");
-
-
-            SerializedProperty AIHP = MyAIRuleListRef.FindPropertyRelative("AIHP");
-            SerializedProperty AIHealthGreaterThan = MyAIRuleListRef.FindPropertyRelative("AIHealthGreaterThan");
-            SerializedProperty AIHealthLessThan = MyAIRuleListRef.FindPropertyRelative("AIHealthLessThan");
-
-
-
-            SerializedProperty AIMP = MyAIRuleListRef.FindPropertyRelative("AIMP");
-            SerializedProperty AIManaGreaterThan = MyAIRuleListRef.FindPropertyRelative("AIManaGreaterThan");
-            SerializedProperty AIManaLessThan = MyAIRuleListRef.FindPropertyRelative("AIManaLessThan");
-
-
-            SerializedProperty AIAbilityTarget = MyAIRuleListRef.FindPropertyRelative("AIAbilityTarget");
-            SerializedProperty AINearestTargets = MyAIRuleListRef.FindPropertyRelative("AINearestTargets");
-            SerializedProperty AINearestTags = MyAIRuleListRef.FindPropertyRelative("AINearestTags");
-
-            SerializedProperty AIAreaActivationLimit = MyAIRuleListRef.FindPropertyRelative("AIAreaActivationLimit");
-            SerializedProperty AIAreaActivationLimitRange = MyAIRuleListRef.FindPropertyRelative("AIAreaActivationLimitRange");
-            SerializedProperty AIAreaActivationLimitMax = MyAIRuleListRef.FindPropertyRelative("AIAreaActivationLimitMax");
-            SerializedProperty AIAreaActivationLimitTags = MyAIRuleListRef.FindPropertyRelative("AIAreaActivationLimitTags");
-
-            SerializedProperty AIFacingTarget = MyAIRuleListRef.FindPropertyRelative("AIFacingTarget");
-
-            #endregion
-
-
-            InspectorSectionHeader(RuleName.stringValue + " General Settings");
-
-            #region SideBySide 
-
-            EditorGUILayout.BeginHorizontal();
-
-            #region AI Rule General Settings
-
-            InspectorVerticalBox(true);
-
-
-            ResetLabelWidth();
-
-            EditorGUILayout.PropertyField(AIActive);
-
-
-
-            EditorGUILayout.PropertyField(selectedAIAction, new GUIContent("AI Action"), GUILayout.Width(260));
-
-            EditorGUILayout.Space();
-
-            if (((string)selectedAIAction.enumNames[selectedAIAction.enumValueIndex]) == "ActivateAbility") {
-
-                // show popup of ability 
-                AIAbilityListChoice.intValue = EditorGUILayout.Popup("Select Ability:", AIAbilityListChoice.intValue, AllAbilities.OrderBy(a => a.name).Select(a => a.name).ToArray());
-
-                if (GUILayout.Button("Update", GUILayout.Width(60))) {
-
-                    AIAbilityID.intValue = AllAbilities.OrderBy(a => a.name).ToArray()[AIAbilityListChoice.intValue].abilityID;
-                }
-
-                EditorGUILayout.Space();
-                if (AIAbilityID.intValue != -1 && AllAbilities.Count > 0) {
-
-                    ABC_Ability ability = AllAbilities.OrderBy(a => a.name).FirstOrDefault(a => a.abilityID == AIAbilityID.intValue);
-
-                    string name = "Ability Not Set";
-
-                    if (ability != null)
-                        name = ability.name;
-
-                    EditorGUILayout.LabelField("Auto activating: " + name, EditorStyles.boldLabel);
-                }
-
-            } else if (((string)selectedAIAction.enumNames[selectedAIAction.enumValueIndex]) == "ActivateAbilityGroup") {
-
-                if (abilityCont != null) {
-                    InspectorAbilityGroupListBox(AIActivateAbilityGroupIDs, AIActivateGroupListChoice);
-                }
-
-            } else if (((string)selectedAIAction.enumNames[selectedAIAction.enumValueIndex]) == "ActivateBlocking") {
-
-                EditorGUIUtility.labelWidth = 130;
-                EditorGUILayout.PropertyField(AIBlockDurationMin, new GUIContent("Block Duration Min"));
-                EditorGUILayout.PropertyField(AIBlockDurationMax, new GUIContent("Block Duration Max"));
-
-                InspectorHelpBox("Minimum/Maximum duration the entity will block for");
-
-
-            } else if (((string)selectedAIAction.enumNames[selectedAIAction.enumValueIndex]) == "EquipWeapon") {
-
-                // show popup of weapon 
-                AIWeaponListChoice.intValue = EditorGUILayout.Popup("Select Weapon:", AIWeaponListChoice.intValue, Weapons.Select(w => w.weaponName).ToArray());
-
-                if (GUILayout.Button("Update", GUILayout.Width(60))) {
-
-                    AIWeaponID.intValue = this.Weapons[AIWeaponListChoice.intValue].weaponID;
-
-
-                }
-
-                EditorGUILayout.Space();
-                if (AIWeaponID.intValue != -1 && this.Weapons.Count > 0) {
-
-                    ABC_Controller.Weapon weapon = this.Weapons.FirstOrDefault(w => w.weaponID == AIWeaponID.intValue);
-
-                    string name = "Weapon Not Set";
-
-                    if (weapon != null)
-                        name = weapon.weaponName;
-
-                    EditorGUILayout.LabelField("Auto activating: " + name, EditorStyles.boldLabel);
-                }
-
-            }
-
-
-
-
-
-
-            EditorGUILayout.PropertyField(probabilityMinValue, new GUIContent("Probability Min"));
-            EditorGUILayout.PropertyField(probabilityMaxValue, new GUIContent("Probability Max"));
-            InspectorHelpBox("Chance of AI Rule being checked");
-
-
-            EditorGUIUtility.labelWidth = 140;
-            EditorGUILayout.PropertyField(AIEnableRuleCooldown, new GUIContent("Enable Rule Cooldown"));
-
-            ResetLabelWidth();
-
-            if (AIEnableRuleCooldown.boolValue == true) {
-                EditorGUILayout.PropertyField(AIRuleCooldownMinValue, new GUIContent("Cooldown Min"));
-                EditorGUILayout.PropertyField(AIRuleCooldownMaxValue, new GUIContent("Cooldown Max"));
-            }
-
-            InspectorHelpBox("If true then the AI rule will trigger a cooldown after use between a random min and max value. Whilst on cooldown the rule can't be used.");
-
-            EditorGUILayout.EndVertical();
-
-            #endregion
-
-
-
-            #region AI Rule Probability 
-
-            InspectorVerticalBox(true);
-
-            EditorGUILayout.Space();
-            EditorGUILayout.PropertyField(RuleName);
-            EditorGUILayout.Space();
-            EditorGUIUtility.labelWidth = 190;
-            EditorGUILayout.PropertyField(AIRangeMin, new GUIContent("Range Greater Than"));
-            EditorGUILayout.PropertyField(AIRangeMax, new GUIContent("Range Less Than"));
-
-            EditorGUILayout.Space();
-            EditorGUILayout.PropertyField(ignoreCaster, new GUIContent("Ignore Activating Entity"));
-            EditorGUILayout.PropertyField(castWithoutConditions, new GUIContent("Activate Without Conditions"));
-
-            if (castWithoutConditions.boolValue == true) {
-                EditorGUILayout.PropertyField(activateWithoutTarget);
-            }
-
-            InspectorHelpBox("If bypass is enabled then the AI will always activate on the target even if there is no open targeting slots due to the targeter limits");
-            EditorGUILayout.PropertyField(bypassTargetLimitations);
-            ResetLabelWidth();
-            EditorGUILayout.Space();
-
-
-
-            ResetLabelWidth();
-
-            EditorGUILayout.EndVertical();
-
-            #endregion
-
-            EditorGUILayout.EndHorizontal();
-
-            #endregion
-
-            #region AllWay 
-
-            #region AI Update Target
-
-            InspectorVerticalBox();
-
-            EditorGUILayout.PropertyField(updateTarget, new GUIContent("Update Target:"));
-            InspectorHelpBox("If the rule condition has been met then the below will change which target the ability is fired on");
-
-
-            if (updateTarget.boolValue == true) {
-                EditorGUIUtility.labelWidth = 120;
-                EditorGUILayout.PropertyField(AIAbilityTarget, GUILayout.Width(230));
-                ResetLabelWidth();
-
-                if (((string)AIAbilityTarget.enumNames[AIAbilityTarget.enumValueIndex]) == "Nearest" || ((string)AIAbilityTarget.enumNames[AIAbilityTarget.enumValueIndex]) == "TargetOfNearest") {
-
-
-                    EditorGUILayout.BeginHorizontal();
-
-
-                    InspectorListBox("Nearest Tags", AINearestTags);
-
-                    InspectorListBox("Nearest Target", AINearestTargets);
-                    EditorGUILayout.EndHorizontal();
-                }
-            }
-
-
-            ResetLabelWidth();
-            EditorGUILayout.EndVertical();
-
-            #endregion
-
-            #endregion
-
-            InspectorSectionHeader("Conditions");
-
-            #region AllWay 
-
-            #region AI Condition Target
-
-            InspectorVerticalBox();
-
-            InspectorHelpBox("The below section sets the rules which are checked against. If all conditions are met then the ability will fire.");
-
-            if (castWithoutConditions.boolValue == false) {
-
-                EditorGUILayout.LabelField(DiamondSymbol.ToString() + " If Tag/Target is in range:");
-                EditorGUILayout.BeginHorizontal();
-                InspectorListBox("Tags:", AITags);
-
-                InspectorListBox("Target:", AITargets);
-                EditorGUILayout.EndHorizontal();
-
-                EditorGUILayout.Space();
-
-
-            } else {
-                EditorGUILayout.HelpBox("AI Rule is set to cast without checking conditions", MessageType.Warning);
-            }
-
-
-            ResetLabelWidth();
-            EditorGUILayout.EndVertical();
-
-            #endregion
-
-            #endregion
-
-            #region AllWay 
-
-            if (castWithoutConditions.boolValue == false) {
-                #region AI facing target
-
-                InspectorVerticalBox();
-
-                EditorGUIUtility.labelWidth = 210;
-                EditorGUILayout.PropertyField(AIFacingTarget, new GUIContent(DiamondSymbol.ToString() + " And entity is facing target:"));
-                ResetLabelWidth();
-
-                EditorGUILayout.Space();
-                EditorGUILayout.EndVertical();
-
-                #endregion
-            }
-
-            #endregion
-
-            #region SideBySide 
-
-            if (castWithoutConditions.boolValue == false) {
-                EditorGUILayout.BeginHorizontal();
-
-                #region AI Condition Health 
-
-                InspectorVerticalBox(true);
-
-                EditorGUILayout.PropertyField(AIHP, new GUIContent(DiamondSymbol.ToString() + " And Health is:"));
-                EditorGUILayout.Space();
-                if (AIHP.boolValue == true) {
-                    EditorGUILayout.BeginVertical();
-                    EditorGUILayout.PropertyField(AIHealthGreaterThan, new GUIContent("> Then (%):"));
-                    EditorGUILayout.PropertyField(AIHealthLessThan, new GUIContent("< Then (%):"));
-                    EditorGUILayout.EndVertical();
-
-                }
-
-                EditorGUILayout.EndVertical();
-
-                #endregion
-
-
-
-                #region AI Condition Mana
-
-                InspectorVerticalBox(true);
-
-                EditorGUILayout.PropertyField(AIMP, new GUIContent(DiamondSymbol.ToString() + " And Mana is:"));
-                EditorGUILayout.Space();
-                if (AIMP.boolValue == true) {
-                    EditorGUILayout.BeginVertical();
-                    EditorGUILayout.PropertyField(AIManaGreaterThan, new GUIContent("> Then (%):"));
-                    EditorGUILayout.PropertyField(AIManaLessThan, new GUIContent("< Then (%):"));
-                    EditorGUILayout.EndVertical();
-                }
-
-                EditorGUILayout.EndVertical();
-
-                #endregion
-
-                EditorGUILayout.EndHorizontal();
-            }
-
-            #endregion
-
-            #region AllWay 
-
-            if (castWithoutConditions.boolValue == false) {
-                #region AI Condition Effect Status
-
-                InspectorVerticalBox();
-
-
-
-                EditorGUILayout.LabelField(DiamondSymbol.ToString() + " And Tag/Target has the following Effect Status:");
-                EditorGUILayout.BeginHorizontal();
-                InspectorListBox("Currently Effected By:", stateEffectConditions);
-                InspectorListBox("Not Effected By:", stateEffectAbsentConditions);
-                EditorGUILayout.EndHorizontal();
-
-                EditorGUILayout.Space();
-
-
-
-
-
-                ResetLabelWidth();
-                EditorGUILayout.EndVertical();
-
-                #endregion
-            }
-
-            #endregion
-
-
-
-            #region AllWay 
-
-            if (castWithoutConditions.boolValue == false) {
-                #region AI surrounding activation Status
-
-                InspectorVerticalBox();
-
-                EditorGUIUtility.labelWidth = 480;
-                EditorGUILayout.PropertyField(AIAreaActivationLimit, new GUIContent(DiamondSymbol.ToString() + " And number of surrounding tags activating are equal to or below limit:"));
-                ResetLabelWidth();
-
-
-                if (AIAreaActivationLimit.boolValue == true) {
-                    EditorGUILayout.BeginHorizontal();
-                    InspectorListBox("Tags:", AIAreaActivationLimitTags);
-                    EditorGUILayout.Space();
-
-                    EditorGUIUtility.labelWidth = 50;
-                    EditorGUILayout.PropertyField(AIAreaActivationLimitMax, new GUIContent("Limit"), GUILayout.MaxWidth(100));
-                    EditorGUILayout.Space();
-                    EditorGUILayout.PropertyField(AIAreaActivationLimitRange, new GUIContent("Range"), GUILayout.MaxWidth(100));
-                    ResetLabelWidth();
-
-                    EditorGUILayout.Space();
-                    EditorGUILayout.EndHorizontal();
-
-                    EditorGUILayout.Space();
-
-                }
-
-                EditorGUILayout.Space();
-                EditorGUILayout.EndVertical();
-
-                #endregion
-            }
-
-            #endregion
-
-
-        }
 
         void GetGlobalElements() {
 
@@ -4908,10 +4249,6 @@ namespace ABCToolkit {
 
                 CreateIconUIReorderableList();
 
-                // ********************************** ReorderableList AI Rules *******************************************
-
-
-                SetupAIRules();
 
 
                 // ********************************** ReorderableList Ability Groups *******************************************
@@ -5151,7 +4488,7 @@ namespace ABCToolkit {
                             GUI.contentColor = Color.white;
                         } else {
                             GUI.backgroundColor = inspectorBackgroundColor;
-                            GUI.contentColor = Color.black;
+                            GUI.contentColor = Color.white;
                         }
 
 
@@ -5492,7 +4829,7 @@ namespace ABCToolkit {
                             GUI.contentColor = Color.white;
                         } else {
                             GUI.backgroundColor = inspectorBackgroundColor;
-                            GUI.contentColor = Color.black;
+                            GUI.contentColor = Color.white;
                         }
 
 
@@ -7082,7 +6419,7 @@ namespace ABCToolkit {
                             GUI.contentColor = Color.white;
                         } else {
                             GUI.backgroundColor = inspectorBackgroundColor;
-                            GUI.contentColor = Color.black;
+                            GUI.contentColor = Color.white;
                         }
 
 
@@ -7117,7 +6454,7 @@ namespace ABCToolkit {
                             GUI.contentColor = Color.white;
                         } else {
                             GUI.backgroundColor = inspectorBackgroundColor;
-                            GUI.contentColor = Color.black;
+                            GUI.contentColor = Color.white;
                         }
 
 
@@ -8091,7 +7428,7 @@ namespace ABCToolkit {
                             GUI.contentColor = Color.white;
                         } else {
                             GUI.backgroundColor = inspectorBackgroundColor;
-                            GUI.contentColor = Color.black;
+                            GUI.contentColor = Color.white;
                         }
 
 
@@ -9049,7 +8386,7 @@ namespace ABCToolkit {
                             GUI.contentColor = Color.white;
                         } else {
                             GUI.backgroundColor = inspectorBackgroundColor;
-                            GUI.contentColor = Color.black;
+                            GUI.contentColor = Color.white;
                         }
 
 
@@ -9110,7 +8447,7 @@ namespace ABCToolkit {
                             GUI.contentColor = Color.white;
                         } else {
                             GUI.backgroundColor = inspectorBackgroundColor;
-                            GUI.contentColor = Color.black;
+                            GUI.contentColor = Color.white;
                         }
 
                         abilityCont.toolbarControllerManagerAISettingsSelection = GUILayout.SelectionGrid(abilityCont.toolbarControllerManagerAISettingsSelection, aiSettingsToolbar, 1);
@@ -9126,10 +8463,6 @@ namespace ABCToolkit {
 
 
                         if (abilityCont.toolbarControllerManagerAISettingsSelection == 1) {
-
-
-                            GetAIRuleSelectList();
-
                         }
 
 
@@ -9149,7 +8482,7 @@ namespace ABCToolkit {
                             GUI.contentColor = Color.white;
                         } else {
                             GUI.backgroundColor = inspectorBackgroundColor;
-                            GUI.contentColor = Color.black;
+                            GUI.contentColor = Color.white;
                         }
 
 
@@ -9221,19 +8554,6 @@ namespace ABCToolkit {
 
                                 break;
                             case 1:
-
-
-                                if (meAIRule.arraySize > 0 && abilityCont.CurrentAI < meAIRule.arraySize) {
-
-
-                                    GetAIRuleSettings();
-
-
-                                }
-
-
-
-
                                 break;
 
                             case 2:

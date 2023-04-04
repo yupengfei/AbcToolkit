@@ -550,12 +550,12 @@ namespace ABCToolkit {
 #endif
 
             //Retrieve input force to be used by animations and rotation checks later
-            if (this.inputX != 0)
+            // if (this.inputX != 0)
                 this.inputForce = new Vector2(inputX, 0).sqrMagnitude;
-            else if (this.inputZ != 0)
-                this.inputForce = new Vector2(0, inputZ).sqrMagnitude;
-            else
-                this.inputForce = new Vector2(inputX, inputZ).sqrMagnitude;
+            // else if (this.inputZ != 0)
+            //     this.inputForce = new Vector2(0, inputZ).sqrMagnitude;
+            // else
+            //     this.inputForce = new Vector2(inputX, inputZ).sqrMagnitude;
 
             //If both axis are being used then half the value to avoid the extra speed from moving in a diagonal direction
             if (this.inputX != 0 && this.inputZ != 0) {
@@ -574,7 +574,10 @@ namespace ABCToolkit {
             camForward.Normalize();
 
             //Work out move direction using the camera direction and the input from user
-            this.moveDirection = camRight * inputX + camForward * inputZ;
+            // this.moveDirection = camRight * inputX + camForward * inputZ;
+            this.moveDirection = camRight * inputX;
+            var zOffset = 0 - meTransform.position.z;
+            this.moveDirection = new Vector3( this.moveDirection.x,  this.moveDirection.y, zOffset);
 
         }
 

@@ -207,19 +207,7 @@ namespace ABCToolkit {
             }
 
 
-            //AI Rules
-            List<ABC_Controller.AIRule> newAIRules = new List<ABC_Controller.AIRule>();
-
-            if (exportAbilitiesAIRules == true && exportingEntity != null) {
-
-                //Get all rules of ability activations linked to weapon
-                foreach (ABC_Controller.AIRule rule in exportingEntity.AIRules.Where(ai => ai.selectedAIAction == ABC_Controller.AIRule.AIAction.ActivateAbility && newAbilities.Select(a => a.abilityID).ToList().Contains(ai.AIAbilityID))) {
-
-                    ABC_Controller.AIRule newRule = new ABC_Controller.AIRule();
-                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(rule), newRule);
-                    newAIRules.Add(newRule);
-                }
-            }
+            
 
 
             // create an empty exported element object
@@ -240,7 +228,6 @@ namespace ABCToolkit {
             exportedElement.elementType = ABC_GlobalElement.GlobalElementType.Abilities;
             exportedElement.ElementWeapon = null;
             exportedElement.ElementAbilities = newAbilities;
-            exportedElement.ElementAIRules = newAIRules;
 
             //save to path 
             string fullPath = UnityEditor.EditorUtility.SaveFilePanel("Save Abilities", "Assets", "New ABC Global Ability", "asset");
@@ -277,8 +264,6 @@ namespace ABCToolkit {
             //Abilites
             List<ABC_Ability> newAbilities = new List<ABC_Ability>();
 
-            //AI Rules
-            List<ABC_Controller.AIRule> newAIRules = new List<ABC_Controller.AIRule>();
 
             if (exportWeaponAbilities == true) {
 
@@ -303,17 +288,6 @@ namespace ABCToolkit {
                     }
                 }
 
-
-                if (exportAbilitiesAIRules == true) {
-
-                    //Get all rules of ability activations linked to weapon
-                    foreach (ABC_Controller.AIRule rule in exportingEntity.AIRules.Where(ai => ai.selectedAIAction == ABC_Controller.AIRule.AIAction.ActivateAbility && newAbilities.Select(a => a.abilityID).ToList().Contains(ai.AIAbilityID))) {
-
-                        ABC_Controller.AIRule newRule = new ABC_Controller.AIRule();
-                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(rule), newRule);
-                        newAIRules.Add(newRule);
-                    }
-                }
             }
 
 
@@ -334,7 +308,6 @@ namespace ABCToolkit {
             exportedElement.elementType = ABC_GlobalElement.GlobalElementType.Weapon;
             exportedElement.ElementWeapon = newWeapon;
             exportedElement.ElementAbilities = newAbilities;
-            exportedElement.ElementAIRules = newAIRules;
 
             //save to path 
             string fullPath = UnityEditor.EditorUtility.SaveFilePanel("Save Weapon", "Assets", "New ABC Weapon Element", "asset");

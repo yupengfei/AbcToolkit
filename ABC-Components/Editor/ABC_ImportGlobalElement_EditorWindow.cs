@@ -44,11 +44,6 @@ namespace ABCToolkit {
         /// </summary>
         public bool importWeaponAbilities = true;
 
-        /// <summary>
-        /// Import AI rules attached to abilities
-        /// </summary>
-        public bool importAbilitiesAIRules = false;
-
 
 
         #endregion
@@ -301,62 +296,6 @@ namespace ABCToolkit {
 
                 }
             }
-
-            //AI Rules
-            List<ABC_Controller.AIRule> currentAIRules = new List<ABC_Controller.AIRule>();
-
-            if (this.importingEntity != null) {
-                currentAIRules = this.importingEntity.AIRules;
-            } else {
-                currentAIRules = this.importingGlobalElement.ElementAIRules;
-            }
-
-            List<ABC_Controller.AIRule> newAIRules = new List<ABC_Controller.AIRule>();
-
-
-            if (importAbilitiesAIRules == true) {
-                //Get all rules of ability activations linked to ability
-                foreach (ABC_Controller.AIRule rule in globalElement.ElementAIRules) {
-
-                    //If rule already exists then continue 
-                    if (currentAIRules.Where(ai => ai.selectedAIAction == rule.selectedAIAction && ai.AIAbilityID == rule.AIAbilityID).Count() > 0)
-                        continue;
-
-                    ABC_Controller.AIRule newRule = new ABC_Controller.AIRule();
-                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(rule), newRule);
-                    newAIRules.Add(newRule);
-                }
-
-
-                //Get all rules of any linked abilities
-                foreach (ABC_Ability elementAbilities in globalElement.ElementAbilities) {
-
-                    if (elementAbilities.globalAbilities == null)
-                        continue;
-
-                    //Get all rules of ability activations linked to ability
-                    foreach (ABC_Controller.AIRule rule in elementAbilities.globalAbilities.ElementAIRules) {
-
-                        //If rule already exists then continue 
-                        if (currentAIRules.Where(ai => ai.selectedAIAction == rule.selectedAIAction && ai.AIAbilityID == rule.AIAbilityID).Count() > 0)
-                            continue;
-
-                        //If rule already exists then continue 
-                        if (newAIRules.Where(ai => ai.selectedAIAction == rule.selectedAIAction && ai.AIAbilityID == rule.AIAbilityID).Count() > 0)
-                            continue;
-
-                        ABC_Controller.AIRule newRule = new ABC_Controller.AIRule();
-                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(rule), newRule);
-                        newAIRules.Add(newRule);
-                    }
-
-                }
-            }
-
-
-
-            currentAIRules.AddRange(newAIRules);
-
         }
 
 

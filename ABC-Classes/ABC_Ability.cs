@@ -351,12 +351,6 @@ namespace ABCToolkit {
         public float statCost = 0;
 
         /// <summary>
-        /// The type of stat to decrease when the ability is used
-        /// </summary>
-        [Tooltip("The type of stat to decrease when the ability is used")]
-        public ABCIntegrationType statCostIntegrationType = ABCIntegrationType.ABC;
-
-        /// <summary>
         /// The name of the stat to decrease when ability is used
         /// </summary>
         [Tooltip("The name of the stat to decrease when ability is used")]
@@ -5883,7 +5877,7 @@ namespace ABCToolkit {
             }
 
             // check we have enough stat 
-            if (this.statCost > 0 && Originator.GetStatValue(this.statCostName, this.statCostIntegrationType, GCStatType.Attribute) < this.statCost) {
+            if (this.statCost > 0 && Originator.GetStatValue(this.statCostName) < this.statCost) {
                 Originator.AddToDiagnosticLog("Not enough " + this.statCostName + " to use " + this.name);
 
                 if (Originator.LogInformationAbout(LoggingType.NoMana))
@@ -10391,7 +10385,7 @@ namespace ABCToolkit {
             if (this.modifyAbilityInitiatingBaseSpeedByStat == true) {
 
                 //Retrieve the stat modification value from the originator(uses the percentage configured - 70% of intelligence etc)
-                float statModification = this.abilityInitiatingBaseSpeedStatModification.percentageValue / 100 * Originator.GetStatValue(this.abilityInitiatingBaseSpeedStatModification.statName, this.abilityInitiatingBaseSpeedStatModification.statIntegrationType);
+                float statModification = this.abilityInitiatingBaseSpeedStatModification.percentageValue / 100 * Originator.GetStatValue(this.abilityInitiatingBaseSpeedStatModification.statName);
 
                 //Apply the modification to the potency depending on the operator setup
                 switch (this.abilityInitiatingBaseSpeedStatModification.arithmeticOperator) {
@@ -10933,7 +10927,7 @@ namespace ABCToolkit {
 
             //adjust any stat cost if set too 
             if (this.statCost > 0)
-                Originator.AdjustStatValue(this.statCostName, -this.statCost, this.statCostIntegrationType, GCStatType.Attribute);
+                Originator.AdjustStatValue(this.statCostName, -this.statCost);
 
             // ability is firing so lets reduce ammo if that is enabled
             if (this.UseAmmo == true) {
