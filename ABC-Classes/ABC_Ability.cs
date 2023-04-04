@@ -5205,19 +5205,17 @@ namespace ABCToolkit {
         /// <param name="IgnoreComboLockResets">(Optional) If true then no combo locks will be reset, else resets will occur as normal</param>
         /// <param name="AIActivated">(Optional)If true then combo check is done by AI which means function will add leeway onto the combo next time, allowing for more time to pass before combo resets </param>
         /// <returns><c>true</c>Ability passes combo conditions and should be allowed to activate. <c>false</c> Ability is not next in the combo group and shouldn't be allowed to activate.</returns>
-        public bool IsComboBlocked(ABC_IEntity Originator, bool IgnoreComboLockResets = false, bool AIActivated = false) {
+        public bool IsComboBlocked(ABC_IEntity Originator, bool IgnoreComboLockResets = false) {
 
             //Determine combo next activate leeway (if AI this is increased)
             float ComboNextActivateTimeLeeway = 0f;
 
-            if (AIActivated == true)
-                ComboNextActivateTimeLeeway = 4f;
 
             // ability has not been set up as a combo, is a scroll ability or is trigger by an input combo (different combo system F, F, B etc) so we can return true as it is allowed to activate
             if (this.abilityCombo == false || this.triggerType == TriggerType.InputCombo || this.scrollAbility == true) {
                 // ability is not a combo so we have just broken any combos that we previously had so we can reset them all and return true 
 
-                if (IgnoreComboLockResets == false && AIActivated == false)
+                if (IgnoreComboLockResets == false)
                     ResetAllComboLocks(Originator);
 
                 return false;

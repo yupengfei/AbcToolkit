@@ -9261,104 +9261,6 @@ namespace ABCToolkit {
         /// </summary>
         private float tempAbilityActivationIntervalAdjustment = 0f;
 
-
-        /// <summary>
-        /// Time interval between starting to decide on which ability to activate automatically
-        /// </summary>
-        private float AICheckIntermission = 0f;
-
-        /// <summary>
-        /// A list of all potential targets which AI will be conditioned against and abilities activated on
-        /// </summary>
-        private List<ABC_IEntity> potentialTargets = new List<ABC_IEntity>();
-
-        /// <summary>
-        /// The time of the last potential target retrieval 
-        /// </summary>
-        private float timeOfLastAIPotentialTargetRetrieval = 0f;
-
-
-        /// <summary>
-        /// The time of the last AI Action, use to determine if the interval is up to next check AI Rules
-        /// </summary>
-        private float timeOfLastAIAction = 0f;
-
-        /// <summary>
-        /// If true then AI Navigation will be blocked 
-        /// </summary>
-        private bool blockNavAI = false;
-
-        /// <summary>
-        /// Tracks the current AI Navigation destination
-        /// </summary>
-        private Transform currentNavAIDestination = null;
-
-        /// <summary>
-        /// Determines if the AI Nav destination has been set
-        /// </summary>
-        private bool navAIDestinationSet = false;
-
-        /// <summary>
-        /// Determines if the wander destination has been set 
-        /// </summary>
-        private bool navAIWanderSet = false;
-
-        /// <summary>
-        /// Tracks when we last set the wander destination so wandering isn't repeated before the interval time
-        /// </summary>
-        private float navAIWanderSetTime = 0f;
-
-        /// <summary>
-        /// Tracks what time the entity last stopped animation so it's not spammed (coroutines need to run)
-        /// </summary>
-        private float navAIStopAnimationTime = 0f;
-
-        /// <summary>
-        /// If true then entity will rotate around current destination
-        /// </summary>
-        private bool navAIRotateAroundDestination = false;
-
-        /// <summary>
-        /// What direction the entity was rotating around (-1 is off, 0 is right, 1 is left)
-        /// </summary>
-        private int navAIRotateAroundDirection = -1;
-
-        /// <summary>
-        /// Duration of the rotation around destination
-        /// </summary>
-        private float navAIRotateAroundDestinationDuration = 0f;
-
-        /// <summary>
-        /// The time in which the entity started to rotate around the destination
-        /// </summary>
-        private float navAIRotateAroundDestinationStartTime = 0f;
-
-        /// <summary>
-        /// The time in which the entity started to change distance from destination
-        /// </summary>
-        private float navAIChangeDestinationDistanceStartTime = 0f;
-
-        /// <summary>
-        /// If true then entity will move back from current destination
-        /// </summary>
-        /// <remarks>Used for when the stopping distance is changed, changing this variable to true will move the entity back so it matches the new stopping distance (if it was higher then before) </remarks>
-        private bool navAIChangeDestinationMovingAway = false;
-
-        /// <summary>
-        /// True if the entity is currently moving towards the destination due to an at destination behaviour
-        /// </summary>
-        private bool navAIChangeDestinationMovingTowards = false;
-
-        /// <summary>
-        /// The distance between the entity and the destination when the entity started moving forward. This is so if the destination changes the behaviour can stop
-        /// </summary>
-        private float navAIChangeDestinationMoveTowardsStartingDistance = 0;
-
-        /// <summary>
-        /// Determines if the AI Nav is currently falling
-        /// </summary>
-        private bool navAIFalling = false;
-
         /// <summary>
         /// Bool which defines if the entity has been restricted from activating abilities due to a hit. 
         /// </summary>
@@ -9504,17 +9406,6 @@ namespace ABCToolkit {
         }
 
 
-
-        public enum AIRuleTarget {
-            Original = 0,
-            Self = 1,
-            Nearest = 2,
-            TargetOfNearest = 3
-        }
-
-
-
-
         private enum ControllerButtonPressState {
             TargetClick,
             Cancel,
@@ -9656,10 +9547,6 @@ namespace ABCToolkit {
                         if (ability.globalAbilityOverrideKeyTrigger == true)
                             newGlobalAbility.key = ability.key;
 
-#if ABC_GC_2_Integration
-                        if (meEntity.HasGC2CharacterComponent())
-                            newGlobalAbility.AdjustAbilityForGameCreator2();
-#endif
 
                         //Do Game type modification if enabled
                         if (newGlobalAbility.globalAbilitiesEnableGameTypeModification == true)
@@ -9682,11 +9569,6 @@ namespace ABCToolkit {
                             newGlobalAbility.globalAbilitiesGameTypeModification = currentGlobalAbility.globalAbilitiesGameTypeModification;
 
                             // reapply game type modification on this reload
-
-#if ABC_GC_2_Integration
-                        if (meEntity.HasGC2CharacterComponent())
-                            newGlobalAbility.AdjustAbilityForGameCreator2();
-#endif
 
                             if (newGlobalAbility.globalAbilitiesEnableGameTypeModification == true)
                                 newGlobalAbility.ConvertToGameType(newGlobalAbility.globalAbilitiesGameTypeModification);
@@ -10155,10 +10037,6 @@ namespace ABCToolkit {
         /// </summary>
         /// <param name="SpeedAdjustment">Amount to adjust the speed by</param>
         public void AdjustNavSpeed(float SpeedAdjustment) {
-
-            //If AI Nav not enabled then end here
-            if (this.navAIEnabled == false)
-                return;
 
             //Add adjustment
             this.navSpeedAdjustment = SpeedAdjustment;
@@ -10682,9 +10560,9 @@ namespace ABCToolkit {
             for (int i = currentIndex; i < potentialComboAbilities.Count(); i++) {
 
                 //If a key trigger and keys match and the ability isn't combo blocked then return the ID
-                if (potentialComboAbilities[i].keyInputType == InputType.Key && potentialComboAbilities[i].key == ability.key && potentialComboAbilities[i].IsComboBlocked(meEntity, true, AIActivated) == false)
+                if (potentialComboAbilities[i].keyInputType == InputType.Key && potentialComboAbilities[i].key == ability.key && potentialComboAbilities[i].IsComboBlocked(meEntity, true) == false)
                     return potentialComboAbilities[i].abilityID;
-                else if (ability.keyInputType == InputType.Button && potentialComboAbilities[i].keyButton == ability.keyButton && potentialComboAbilities[i].IsComboBlocked(meEntity, true, AIActivated) == false)  //If a button trigger and buttons match return the ID
+                else if (ability.keyInputType == InputType.Button && potentialComboAbilities[i].keyButton == ability.keyButton && potentialComboAbilities[i].IsComboBlocked(meEntity, true) == false)  //If a button trigger and buttons match return the ID
                     return potentialComboAbilities[i].abilityID;
 
             }

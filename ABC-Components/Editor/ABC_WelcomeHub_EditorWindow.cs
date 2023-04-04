@@ -31,9 +31,6 @@ namespace ABCToolkit {
         static float windowHeight = 620f;
         static float windowWidth = 835f;
 
-        //Width of first column in left part of main body 
-        int settingButtonsWidth = 150;
-
         public int minimumSectionHeight = 0;
         public int minimumSideBySideSectionWidth = 312;
         public int minimumAllWaySectionWidth = (int)windowWidth;

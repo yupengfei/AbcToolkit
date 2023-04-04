@@ -181,28 +181,6 @@ namespace ABCToolkit {
                 }
             }
 
-            // traditional JFA
-            else {
-                // choose a starting buffer so we always finish on the same buffer
-                int startBufferID = (jfaIter % 2 == 0) ? nearestPointPingPongID : nearestPointID;
-
-                // jfa init
-                cb.Blit(silhouetteBufferID, startBufferID, outlineMat, SHADER_PASS_JFA_INIT);
-
-                // jfa flood passes
-                for (int i = jfaIter; i >= 0; i--) {
-                    // calculate appropriate jump width for each iteration
-                    // + 0.5 is just me being cautious to avoid any floating point math rounding errors
-                    cb.SetGlobalFloat(stepWidthID, Mathf.Pow(2, i) + 0.5f);
-
-                    // ping pong between buffers
-                    if (i % 2 == 1)
-                        cb.Blit(nearestPointID, nearestPointPingPongID, outlineMat, SHADER_PASS_JFA_FLOOD);
-                    else
-                        cb.Blit(nearestPointPingPongID, nearestPointID, outlineMat, SHADER_PASS_JFA_FLOOD);
-                }
-            }
-
             // jfa decode & outline render
             cb.Blit(nearestPointID, BuiltinRenderTextureType.CameraTarget, outlineMat, SHADER_PASS_JFA_OUTLINE);
 

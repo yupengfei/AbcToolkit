@@ -480,7 +480,6 @@ namespace ABCToolkit {
 
 
         // symbols used for aesthetics only
-        char DiamondSymbol = '\u25C6';
         char UpArrowSymbol = '\u2191';
         char DownArrowSymbol = '\u2193';
         char StarSymbol = '\u2605';
@@ -4169,9 +4168,6 @@ namespace ABCToolkit {
 
             #endregion
         }
-
-
-        int aiRuleListChoice = 0;
 
 
         void GetGlobalElements() {

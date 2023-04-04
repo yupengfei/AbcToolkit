@@ -1773,15 +1773,6 @@ namespace ABCToolkit {
             if (graphicObj != null && this.scaleEffectGraphic == true)
                 graphicObj.transform.localScale = new Vector3(this.effectGraphicScale, this.effectGraphicScale, this.effectGraphicScale);
 
-            bool GC2Mode = false;
-
-#if ABC_GC_2_Integration
-        if (Target!= null && Target.HasGC2CharacterComponent())
-            GC2Mode = true;
-#endif
-
-
-
             // if a hit point is giving and the right setting is true then play the effect at the hit point
             if (HitPoint != Vector3.zero && this.effectOnHitPosition == true) {
 
