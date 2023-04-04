@@ -2219,11 +2219,10 @@ namespace ABCToolkit {
         /// Will use the ability ID provided to find the next avaliable (not combo blocked) ability ID in it's combo chain
         /// </summary>
         /// <param name="AbilityID">ID of the ability used to find the next combo ability</param>
-        /// <param name="AIActivated">(Optional)If true then the next combo ID has been requested AI which means function will add leeway onto the combo next time, allowing for more time to pass before combo resets </param>
         /// <returns>ID of the next ability in the combo chain or -1 if not found</returns>
-        public virtual int GetAbilityNextAvaliableComboID(int AbilityID, bool AIActivated = false) {
+        public virtual int GetAbilityNextAvaliableComboID(int AbilityID) {
 
-            return this._entityABC.GetAbilityNextAvaliableComboID(AbilityID, AIActivated);
+            return this._entityABC.GetAbilityNextAvaliableComboID(AbilityID);
 
         }
 
@@ -2233,9 +2232,9 @@ namespace ABCToolkit {
         /// <param name="AbilityName">Name of the ability used to find the next combo ability</param>
         /// <param name="AIActivated">(Optional)If true then the next combo ID has been requested AI which means function will add leeway onto the combo next time, allowing for more time to pass before combo resets </param>
         /// <returns>ID of the next ability in the combo chain</returns>
-        public virtual int GetAbilityNextAvaliableComboID(string AbilityName, bool AIActivated = false) {
+        public virtual int GetAbilityNextAvaliableComboID(string AbilityName) {
 
-            return this._entityABC.GetAbilityNextAvaliableComboID(AbilityName, AIActivated);
+            return this._entityABC.GetAbilityNextAvaliableComboID(AbilityName);
 
         }
 
